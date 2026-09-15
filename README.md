@@ -88,7 +88,8 @@ Built-in presets: **Nightcore**, **Slowed**, **Vaporwave**, **Speed Up**
 - Automatic fetching of **synced lyrics** (karaoke-style, word-by-word highlighting)
 - Falls back to unsynced lyrics
 - Resizable lyrics panel with configurable font and size
-
+- Romanization available for Japanese lyrics
+ 
 ### 🎨 Customization
 Every visual aspect is adjustable from the theme panel:
 - **Color theme** — 8 built-in presets (Dark, AMOLED, Midnight, Forest, Ocean, Rose, Light, Coffee) plus a full color picker for every UI element
@@ -245,6 +246,7 @@ Presets incluidos: **Nightcore**, **Slowed**, **Vaporwave**, **Speed Up**
 - Obtención automática de **letras sincronizadas** (estilo karaoke, resaltado palabra a palabra)
 - Fallback a letras no sincronizadas
 - Panel de letras redimensionable, fuente y tamaño configurables
+- Romanizacion disponible para las letras en Japones
 
 ### 🎨 Personalización
 Cada aspecto visual es ajustable desde el panel de temas:
