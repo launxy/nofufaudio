@@ -1,0 +1,47 @@
+{
+  "name": "nofufaudio",
+  "version": "1.0.0",
+  "description": "nofufaudio Player",
+  "author": "ghostzlyy",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win",
+    "build:linux": "electron-builder --linux",
+    "build:all": "electron-builder --win --linux"
+  },
+  "build": {
+    "appId": "com.nofuf.audio",
+    "productName": "NofufAudio",
+    "files": [
+      "**/*",
+      "!*.zip",
+      "!node_modules/.cache",
+      "!yt-dlp.exe",
+      "!yt-dlp"
+    ],
+    "win": {
+      "target": ["nsis", "portable"],
+      "icon": "logonofufaudio.ico",
+      "extraResources": [
+        { "from": "yt-dlp.exe",                "to": "yt-dlp.exe" },
+        { "from": "spotify_scraper_helper.py", "to": "spotify_scraper_helper.py" },
+        { "from": "spotifypl_to_dl.py",        "to": "spotifypl_to_dl.py" }
+      ]
+    },
+    "linux": {
+      "target": ["tar.gz"],
+      "icon": "build/icons/logonofufaudio.png",
+      "category": "Audio",
+      "extraResources": [
+        { "from": "yt-dlp",                    "to": "yt-dlp" },
+        { "from": "spotify_scraper_helper.py", "to": "spotify_scraper_helper.py" },
+        { "from": "spotifypl_to_dl.py",        "to": "spotifypl_to_dl.py" }
+      ]
+    }
+  },
+  "devDependencies": {
+    "electron": "^42.2.0",
+    "electron-builder": "^26.8.1"
+  }
+}
