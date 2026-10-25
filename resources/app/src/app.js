@@ -7667,7 +7667,6 @@ function _eqClosePanel() {
   if (btnSleep && sleepMenu) {
     btnSleep.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (speedMenu) speedMenu.style.display = 'none';
       const show = sleepMenu.style.display === 'none';
       sleepMenu.style.display = show ? 'block' : 'none';
       if (show) {
