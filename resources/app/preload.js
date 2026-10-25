@@ -1,6 +1,10 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('nofuf', {
+  // Electron ≥32 eliminó File.path: esta es la vía oficial para resolver rutas de ficheros arrastrados
+  getPathForFile: (file) => {
+    try { return webUtils.getPathForFile(file); } catch { return ''; }
+  },
   minimize: () => ipcRenderer.send('window-minimize'),
   maximize: () => ipcRenderer.send('window-maximize'),
   close:    () => ipcRenderer.send('window-close'),
@@ -94,4 +98,31 @@ contextBridge.exposeInMainWorld('nofuf', {
     return 'file://' + p;
   },
   platform: process.platform,
+
+  // --- Sesión de YouTube ---
+  checkYoutubeSession: () => ipcRenderer.invoke('check-youtube-session'),
+
+  // --- ListenBrainz (scrobbling) ---
+  lbValidateToken: (token) => ipcRenderer.invoke('lb-validate-token', token),
+  lbSubmitListen:  (payload) => ipcRenderer.invoke('lb-submit-listen', payload),
+
+  // --- Discord Rich Presence ---
+  rpcUpdate: (state) => ipcRenderer.send('rpc-update', state),
+
+  // --- Mini-reproductor ---
+  miniToggle: () => ipcRenderer.send('mini-toggle'),
+  miniClose:  () => ipcRenderer.send('mini-close'),
+  miniShowMain: () => ipcRenderer.send('mini-show-main'),
+  miniSendState: (state) => ipcRenderer.send('mini-state', state),
+  miniControl: (action) => ipcRenderer.send('mini-control', action),
+  onMiniState: (cb) => {
+    const listener = (_e, state) => cb(state);
+    ipcRenderer.on('mini-state', listener);
+    return () => ipcRenderer.removeListener('mini-state', listener);
+  },
+  onMiniControl: (cb) => {
+    const listener = (_e, action) => cb(action);
+    ipcRenderer.on('mini-control', listener);
+    return () => ipcRenderer.removeListener('mini-control', listener);
+  },
 });

@@ -8,7 +8,7 @@
   --border2:     rgba(255,255,255,0.13);
   --t1:          #fff;
   --t2:          #b3b3b3;
-  --t3:          #6a6a6a;
+  --t3:          #8c8c8c;
   --accent:      #fff;
   --accent-rgb:  255,255,255;
   --red:         #e22134;
@@ -299,7 +299,7 @@ body.hide-window-controls .titlebar-controls{display:none}
   background:var(--bg2);border-radius:var(--r12);
   display:flex;flex-direction:column;position:relative;
   min-width:0;max-width:none;
-  will-change:width;
+  /* sin will-change:width: animar layout no se beneficia de capas y duplica memoria */
   transition:width .3s cubic-bezier(.4,0,.2,1);
   z-index: 9800;
 }
@@ -1085,9 +1085,9 @@ body.has-bg-image .viz-view {
   position: absolute;
   top: 0; right: 0; bottom: 0;
   width: 280px;
-  background: rgba(15,15,15,.92);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  /* fondo casi opaco sin backdrop-filter: difuminar 280px sobre el canvas
+     del visualizador animado a 60fps es muy caro en GPU */
+  background: rgba(17,17,19,.96);
   border-left: 1px solid rgba(255,255,255,.08);
   display: flex;
   flex-direction: column;
@@ -2729,3 +2729,147 @@ body.app-translucent .player-bar {
 select, .settings-select, .tp-select, .lyrics-source-select {
   transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
+
+/* ============================================================
+   Mejoras globales de accesibilidad, scroll y rendimiento
+   ============================================================ */
+
+/* Navegación por teclado visible (el resto de outline:none se mantiene para el clic).
+   Los campos de texto quedan excluidos: ya tienen su propio estilo de foco
+   (p. ej. .tsearch-wrap:focus-within sigue el redondeo del buscador). */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[contenteditable]:focus-visible {
+  outline: none;
+}
+
+/* Scrollbar consistente en todas las zonas scrollables */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--bg4);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--bg5); }
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* Respetar la preferencia del sistema de reducir movimiento */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Ventanas estrechas (mínimo 800px): colapsar paneles para que el contenido respire */
+@media (max-width: 980px) {
+  :root { --sb: 210px; --lp: 250px; }
+  .home-shelf { gap: 10px; }
+}
+@media (max-width: 840px) {
+  :root { --sb: 64px; }
+  .sidebar .nav-item span,
+  .sidebar .sidebar-group-label,
+  .sidebar .sidebar-btn span,
+  .sidebar .sb-playlist-name { display: none; }
+  .sidebar .nav-item, .sidebar .sidebar-btn { justify-content: center; }
+}
+
+/* ============================================================
+   Nuevas funciones: biblioteca (búsqueda/orden), radio, velocidad,
+   sleep timer, mini-player, selección múltiple, integraciones
+   ============================================================ */
+
+/* Rendimiento: el navegador se salta layout/paint de las filas fuera de pantalla */
+.queue-item{
+  content-visibility:auto;
+  contain-intrinsic-size: auto 52px;
+}
+
+/* --- Toolbar de biblioteca --- */
+.lib-toolbar{
+  display:flex;align-items:center;gap:8px;
+  padding:0 20px 10px;flex-shrink:0;
+}
+.lib-search-wrap{
+  display:flex;align-items:center;gap:7px;flex:1;max-width:320px;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:var(--rfull);padding:0 12px;height:30px;
+  transition:border-color .15s, background .15s;
+}
+.lib-search-wrap:focus-within{border-color:var(--border2);background:var(--bg4)}
+.lib-search-icon{color:var(--t3);flex-shrink:0}
+.lib-search-input{
+  flex:1;background:transparent;border:none;outline:none;
+  color:var(--t1);font-family:inherit;font-size:calc(12px * var(--font-scale,1));
+  min-width:0;
+}
+.lib-select{
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--rfull);
+  color:var(--t2);padding:5px 10px;font-size:calc(11.5px * var(--font-scale,1));
+  font-family:inherit;outline:none;cursor:pointer;
+  transition:border-color .15s,color .15s;
+}
+.lib-select:hover{color:var(--t1);border-color:var(--border2)}
+
+/* --- Cabecera de grupo en la biblioteca agrupada --- */
+.lib-group-header{
+  display:flex;align-items:center;gap:8px;
+  padding:14px 20px 6px;font-size:calc(13px * var(--font-scale,1));
+  font-weight:700;color:var(--t1);letter-spacing:.02em;
+  position:sticky;top:0;z-index:2;
+  background:linear-gradient(var(--bg) 70%, transparent);
+}
+.lib-group-header .lib-group-count{color:var(--t3);font-weight:500;font-size:calc(11px * var(--font-scale,1))}
+
+/* --- Filas seleccionadas (Ctrl/Shift) --- */
+.queue-item.selected{background:var(--bg4)!important}
+.queue-item.selected .qi-title{color:var(--accent)}
+
+/* --- Barra flotante de selección múltiple --- */
+.sel-action-bar{
+  position:fixed;left:50%;transform:translateX(-50%);
+  bottom:calc(var(--bar) + 14px);z-index:9600;
+  display:flex;align-items:center;gap:8px;
+  background:var(--bg3);border:1px solid var(--border2);
+  border-radius:var(--rfull);padding:7px 10px 7px 16px;
+  box-shadow:0 10px 34px rgba(0,0,0,.55);
+  animation:panelDropdownEnter .35s cubic-bezier(0.16,1,0.3,1) both;
+}
+.sel-count{font-weight:800;color:var(--accent);font-size:calc(13px * var(--font-scale,1))}
+.sel-label{color:var(--t2);font-size:calc(11.5px * var(--font-scale,1));margin-right:4px}
+
+/* --- Popovers de velocidad / sleep --- */
+.mini-popover{
+  position:fixed;z-index:9700;min-width:150px;
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:var(--r8);padding:6px;
+  box-shadow:0 12px 40px rgba(0,0,0,.6);
+  animation:ctxMenuEnter .3s cubic-bezier(0.16,1,0.3,1) both;
+  transform-origin:bottom right;
+}
+.mini-popover .ctx-item{border-radius:var(--r4)}
+.mini-popover-hint{padding:6px 10px;color:var(--t3);font-size:calc(10.5px * var(--font-scale,1))}
+
+/* --- Botones de la barra: sleep / mini --- */
+#btn-sleep.has-countdown{color:var(--accent)}
+
+/* --- Playlist del sidebar como drop target --- */
+.sb-playlist{transition:background .12s,border-color .12s;border:1px solid transparent}
+.sb-playlist.drag-over{background:var(--bg4);border-color:var(--accent);border-style:dashed}
+
+/* --- Fila de " Tus hits" auto-playlist en sidebar: icono distinto no requerido --- */
+
+.settings-input{
+  background:var(--bg4);border:1px solid var(--border2);border-radius:var(--r4);
+  color:var(--t1);padding:6px 10px;font-size:calc(12px * var(--font-scale,1));
+  font-family:var(--font);outline:none;transition:border-color .15s;
+}
+.settings-input:focus{border-color:var(--accent)}
+.settings-input::placeholder{color:var(--t3)}

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>NofufAudio Mini</title>
+  <style>
+    :root{ --bg:#121212; --bg3:#1f1f1f; --bg4:#282828; --t1:#fff; --t2:#b3b3b3; --border:rgba(255,255,255,.08); --accent:#fff; }
+    html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--t1);
+      font-family:'DM Sans',-apple-system,sans-serif;-webkit-font-smoothing:antialiased;user-select:none}
+    #mini{display:flex;flex-direction:column;height:100%;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+    #drag{position:absolute;inset:0 0 auto 0;height:26px;-webkit-app-region:drag}
+    .row{display:flex;align-items:center;gap:10px;padding:9px 10px 6px;flex:1;min-height:0}
+    .art{width:56px;height:56px;border-radius:8px;background:var(--bg3);flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;overflow:hidden}
+    .art img{width:100%;height:100%;object-fit:cover;display:block}
+    .meta{flex:1;min-width:0}
+    .title{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .artist{font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+    .controls{display:flex;align-items:center;gap:2px;flex-shrink:0}
+    .btn{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:none;
+      background:transparent;color:var(--t2);cursor:pointer;border-radius:6px;transition:background .12s,color .12s}
+    .btn:hover{background:var(--bg4);color:var(--t1)}
+    .btn.play{width:34px;height:34px;color:var(--t1)}
+    .btn.win{width:20px;height:20px}
+    .btn.win:hover{color:#fff}
+    .btn.win.close:hover{color:#e22134}
+    .winrow{position:absolute;top:2px;right:4px;display:flex;gap:2px;z-index:2}
+    .bar{height:3px;background:var(--bg3);margin:0 10px 9px;border-radius:2px;overflow:hidden;cursor:default}
+    .bar-fill{height:100%;width:0%;background:var(--t1);border-radius:2px;transition:width .3s linear}
+  </style>
+</head>
+<body>
+  <div id="mini">
+    <div id="drag"></div>
+    <div class="winrow">
+      <button class="btn win" id="btn-expand" title="Abrir NofufAudio"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button>
+      <button class="btn win close" id="btn-close" title="Cerrar mini-reproductor"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M1 1l8 8M9 1L1 9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+    </div>
+    <div class="row">
+      <div class="art" id="art">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><path d="M9 18V5l12-2v13" stroke-linecap="round"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+      </div>
+      <div class="meta">
+        <div class="title" id="title">—</div>
+        <div class="artist" id="artist">—</div>
+      </div>
+      <div class="controls">
+        <button class="btn" id="btn-prev" title="Anterior"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg></button>
+        <button class="btn play" id="btn-play" title="Play/Pausa">
+          <svg id="ic-play" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          <svg id="ic-pause" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+        </button>
+        <button class="btn" id="btn-next" title="Siguiente"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2V6z"/><path d="M14.5 12L6 6v12l8.5-6z"/></svg></button>
+      </div>
+    </div>
+    <div class="bar"><div class="bar-fill" id="bar-fill"></div></div>
+  </div>
+  <script>
+    const $ = id => document.getElementById(id);
+    let lastPct = -1;
+
+    function render(state) {
+      if (!state) return;
+      $('title').textContent = state.title || '—';
+      $('artist').textContent = state.artist || '—';
+      if (state.cover) {
+        const cur = $('art').querySelector('img');
+        if (!cur || cur.src !== state.cover) {
+          $('art').innerHTML = '';
+          const img = document.createElement('img');
+          img.src = state.cover;
+          $('art').appendChild(img);
+        }
+      }
+      $('ic-play').style.display = state.playing ? 'none' : '';
+      $('ic-pause').style.display = state.playing ? '' : 'none';
+      const pct = state.duration > 0 ? Math.min(100, (state.position / state.duration) * 100) : 0;
+      if (Math.abs(pct - lastPct) >= 0.5) { lastPct = pct; $('bar-fill').style.width = pct + '%'; }
+    }
+
+    $('btn-play').addEventListener('click', () => window.nofuf.miniControl('toggle'));
+    $('btn-prev').addEventListener('click', () => window.nofuf.miniControl('prev'));
+    $('btn-next').addEventListener('click', () => window.nofuf.miniControl('next'));
+    $('btn-close').addEventListener('click', () => window.nofuf.miniClose());
+    $('btn-expand').addEventListener('click', () => window.nofuf.miniShowMain());
+
+    window.nofuf.onMiniState(render);
+    // Pedir estado inicial al reproductor principal
+    window.nofuf.miniControl('ready');
+  </script>
+</body>
+</html>

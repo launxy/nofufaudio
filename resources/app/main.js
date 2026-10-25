@@ -7,6 +7,7 @@ const https = require('https');
 const http  = require('http');
 const crypto = require('crypto');
 const { spawn } = require('child_process');
+const discordRPC = require('./discordRPC');
 
 function findPython3() {
   const venvPy = path.join(os.homedir(), '.local', 'share', 'nofufaudio', 'venv', 'bin', 'python3');
@@ -309,6 +310,7 @@ ipcMain.handle('config-write', (_, { name, content }) => {
     if (name === 'settings.json') {
       try { refreshTrayLanguage(); } catch (e) {}
       try { applyAppIcons(); } catch (e) {}
+      try { _applyDiscordClientId(); } catch (e) {}
     }
     return { ok: true, path: p };
   } catch (e) { return { ok: false, error: e.message }; }
@@ -593,7 +595,7 @@ async function resolveWithYtDlp(videoId) {
       '--geo-bypass',
       ...extraArgs,
       '-f', format,
-      '--print', '%(title)s|||%(uploader)s|||%(thumbnail)s|||%(url)s',
+      '--print', '%(title)s|||%(uploader)s|||%(thumbnail)s|||%(url)s|||%(ext)s|%(abr)s|%(tbr)s|%(acodec)s',
       videoUrl
     ];
     let stdout = '', stderr = '';
@@ -625,8 +627,22 @@ async function resolveWithYtDlp(videoId) {
       const [title, artist, thumbnail, streamUrl] = parts;
       if (!streamUrl?.startsWith('http')) return resolve({ type:'error', message:'No se obtuvo URL de stream.' });
       if (isManifest(streamUrl)) return resolve({ type:'retry-format', message:'Stream es manifiesto.' });
+
+      // Calidad aproximada del stream para mostrarla en el reproductor
+      let quality = '';
+      if (parts[4]) {
+        try {
+          const [ext, abr, tbr, acodec] = parts[4].split('|');
+          const kbps = Math.round(parseFloat(abr) || parseFloat(tbr) || 0);
+          const codecRaw = (acodec && acodec !== 'NA' && acodec !== 'none') ? acodec : '';
+          const codec = codecRaw
+            ? (codecRaw.startsWith('mp4a') ? 'aac' : codecRaw.startsWith('ec-3') ? 'eac3' : codecRaw.startsWith('opus') ? 'opus' : codecRaw)
+            : (ext && ext !== 'NA' ? ext : '');
+          quality = [codec, kbps ? kbps + 'kbps' : ''].filter(Boolean).join(' · ');
+        } catch (_) {}
+      }
       const proxyUrl = `http://127.0.0.1:${_proxyPort}/stream?url=${encodeURIComponent(streamUrl)}`;
-      resolve({ type:'success', videoId, title, artist, thumbnail, streamUrl: proxyUrl });
+      resolve({ type:'success', videoId, title, artist, thumbnail, streamUrl: proxyUrl, quality });
     });
     proc.on('error', err => {
       if (err.code === 'ENOENT') resolve({ type:'error', message:'yt-dlp no encontrado.' });
@@ -1086,13 +1102,26 @@ ipcMain.handle('download-default-folder', () => {
   try { return app.getPath('music'); } catch { return app.getPath('downloads'); }
 });
 
-ipcMain.handle('download-youtube', async (_, { id, videoId, ytUrl, title, artist, outDir, format }) => {
+ipcMain.handle('download-youtube', async (_, { id, videoId, ytUrl, title, artist, outDir, format, template }) => {
   const ytdlpBin = findYtDlp();
   const cookieArgs = await getCookieArgs();
   const url = ytUrl || `https://www.youtube.com/watch?v=${videoId}`;
   const safeTitle = (title || 'audio').replace(/[<>:"/\\|?*\x00-\x1F]/g, '_').slice(0, 120);
   const safeArtist = (artist || '').replace(/[<>:"/\\|?*\x00-\x1F]/g, '_').slice(0, 80);
-  const baseName = safeArtist ? `${safeArtist} - ${safeTitle}` : safeTitle;
+  // Plantilla opcional p.ej. "{artist} - {title}"; sin ella, el formato clásico
+  let baseName;
+  const tpl = typeof template === 'string' ? template.trim() : '';
+  if (tpl && tpl.includes('{')) {
+    baseName = tpl
+      .replace(/\{artist\}/gi, safeArtist || 'Unknown Artist')
+      .replace(/\{title\}/gi, safeTitle)
+      .replace(/\{album\}/gi, '')
+      .replace(/[<>:"/\\|?*\x00-\x1F]/g, '_')
+      .replace(/\s+/g, ' ')
+      .replace(/^[\s_-]+|[\s_-]+$/g, '')
+      .slice(0, 160);
+  }
+  if (!baseName) baseName = safeArtist ? `${safeArtist} - ${safeTitle}` : safeTitle;
 
   const fmt = (format || 'mp3').toLowerCase();
   const useExtract = ['mp3','m4a','opus','wav','flac','aac'].includes(fmt);
@@ -1167,10 +1196,13 @@ ipcMain.handle('download-local-file', async (_, { id, srcPath, outDir, title, ar
       const rs = fs.createReadStream(srcPath);
       const ws = fs.createWriteStream(dest);
       let copied = 0;
+      // Throttle: un mensaje IPC por chunk generaba miles para archivos grandes
+      let _lastPctSent = -1;
       rs.on('data', chunk => {
         copied += chunk.length;
         const pct = total ? (copied / total) * 100 : 0;
-        send({ status:'downloading', percent: pct });
+        const step = Math.floor(pct);
+        if (step !== _lastPctSent) { _lastPctSent = step; send({ status:'downloading', percent: pct }); }
       });
       rs.on('error', err => { send({ status:'error', error: err.message }); resolve({ ok:false, error: err.message }); });
       ws.on('error', err => { send({ status:'error', error: err.message }); resolve({ ok:false, error: err.message }); });
@@ -2482,7 +2514,147 @@ ipcMain.on('window-reload',   () => { if (mainWindow) mainWindow.webContents.rel
 app.on('before-quit', () => {
   isQuitting = true;
   if (_proxyServer) _proxyServer.close();
+  discordRPC.shutdown();
   const { globalShortcut } = require('electron');
   globalShortcut.unregisterAll();
 });
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
+
+// ============================================================
+// Sesión de YouTube (estado visible en Ajustes)
+// ============================================================
+ipcMain.handle('check-youtube-session', async () => {
+  const ytdlpBin = findYtDlp();
+  const cookieArgs = await getCookieArgs();
+  if (!cookieArgs.length) {
+    return { ok: false, source: 'none', message: 'Sin sesión: no hay cookies manuales ni de navegador configuradas.' };
+  }
+  const source = cookieArgs[0] === '--cookies' ? 'manual' : 'browser';
+  return new Promise((resolve) => {
+    const args = [
+      '--no-warnings', '--flat-playlist', '--playlist-end', '1',
+      ...cookieArgs,
+      '--print', '%(id)s',
+      'ytsearch1:nofufaudio session check'
+    ];
+    let stdout = '', stderr = '';
+    const proc = spawn(ytdlpBin, args, { timeout: 25000 });
+    proc.stdout.on('data', d => stdout += d.toString());
+    proc.stderr.on('data', d => stderr += d.toString());
+    proc.on('close', (code) => {
+      if (code === 0 && stdout.trim().length > 0) {
+        resolve({ ok: true, source, message: source === 'manual' ? 'Sesión activa (cookies manuales).' : 'Sesión activa (cookies del navegador).' });
+      } else {
+        resolve({ ok: false, source, message: 'Sesión caducada o inválida: ' + (stderr || `código ${code}`).slice(0, 140) });
+      }
+    });
+    proc.on('error', (e) => resolve({ ok: false, source, message: 'No se pudo lanzar yt-dlp: ' + e.message }));
+  });
+});
+
+// ============================================================
+// ListenBrainz (scrobbling) — API abierta con token de usuario
+// ============================================================
+function lbRequest(method, pathname, body, token) {
+  return new Promise((resolve) => {
+    try {
+      const data = body ? Buffer.from(JSON.stringify(body), 'utf-8') : null;
+      const req = https.request({
+        hostname: 'api.listenbrainz.org',
+        path: pathname,
+        method,
+        timeout: 12000,
+        headers: {
+          'Authorization': `Token ${token || ''}`,
+          'Content-Type': 'application/json',
+          ...(data ? { 'Content-Length': data.length } : {}),
+        },
+      }, (res) => {
+        let raw = '';
+        res.on('data', c => raw += c.toString());
+        res.on('end', () => {
+          let json = null;
+          try { json = JSON.parse(raw); } catch (_) {}
+          resolve({ status: res.statusCode, json, raw });
+        });
+      });
+      req.on('error', () => resolve({ status: 0, json: null }));
+      req.on('timeout', () => { req.destroy(); resolve({ status: 0, json: null }); });
+      if (data) req.write(data);
+      req.end();
+    } catch (e) { resolve({ status: 0, json: null }); }
+  });
+}
+
+ipcMain.handle('lb-validate-token', async (_, token) => {
+  if (!token || typeof token !== 'string') return { ok: false, message: 'Introduce tu token de ListenBrainz.' };
+  const r = await lbRequest('GET', '/1/validate-token', null, token.trim());
+  if (r.status === 200 && r.json?.valid) return { ok: true, user: r.json.user_name };
+  if (r.status === 401) return { ok: false, message: 'Token inválido.' };
+  return { ok: false, message: r.status ? `Error ${r.status}` : 'Sin conexión con ListenBrainz.' };
+});
+
+ipcMain.handle('lb-submit-listen', async (_, { token, payload }) => {
+  if (!token) return { ok: false, message: 'Sin token' };
+  const r = await lbRequest('POST', '/1/submit-listens', payload, token);
+  return { ok: r.status === 200, status: r.status, message: r.json?.error || '' };
+});
+
+// ============================================================
+// Discord Rich Presence (módulo propio sin dependencias)
+// ============================================================
+function _applyDiscordClientId() {
+  try {
+    const p = path.join(getConfigDir(), 'settings.json');
+    if (!fs.existsSync(p)) return;
+    const cfg = JSON.parse(fs.readFileSync(p, 'utf-8') || '{}');
+    if (cfg.discordClientId) discordRPC.setClientId(cfg.discordClientId);
+  } catch (_) {}
+}
+_applyDiscordClientId();
+
+ipcMain.on('rpc-update', (_e, state) => {
+  try {
+    if (!state || !state.enabled) { discordRPC.clearActivity(); return; }
+    discordRPC.setActivity(state);
+  } catch (err) { console.warn('[rpc]', err.message); }
+});
+
+// ============================================================
+// Mini-reproductor (ventana compacta siempre visible)
+// ============================================================
+let miniWindow = null;
+
+function createMiniWindow() {
+  if (miniWindow) { miniWindow.show(); miniWindow.focus(); return; }
+  miniWindow = new BrowserWindow({
+    width: 340, height: 108, minWidth: 280, minHeight: 84,
+    frame: false, alwaysOnTop: true, skipTaskbar: true,
+    resizable: false, fullscreenable: false,
+    backgroundColor: '#0a0a0f',
+    title: 'NofufAudio Mini',
+    webPreferences: {
+      nodeIntegration: false, contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js'),
+      webSecurity: false,
+    },
+  });
+  miniWindow.setAlwaysOnTop(true, 'floating');
+  miniWindow.loadFile(path.join(__dirname, 'src', 'mini.html'));
+  miniWindow.on('closed', () => { miniWindow = null; });
+}
+
+ipcMain.on('mini-toggle', () => {
+  if (miniWindow) { miniWindow.close(); }
+  else createMiniWindow();
+});
+ipcMain.on('mini-close', () => { if (miniWindow) miniWindow.close(); });
+ipcMain.on('mini-show-main', () => { if (mainWindow) { mainWindow.show(); mainWindow.focus(); } });
+
+// Estado del reproductor principal → mini; acciones del mini → principal
+ipcMain.on('mini-state', (_e, state) => {
+  try { if (miniWindow && !miniWindow.isDestroyed()) miniWindow.webContents.send('mini-state', state); } catch (_) {}
+});
+ipcMain.on('mini-control', (_e, action) => {
+  try { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('mini-control', action); } catch (_) {}
+});
