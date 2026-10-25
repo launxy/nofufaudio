@@ -9,6 +9,9 @@
       font-family:'DM Sans',-apple-system,sans-serif;-webkit-font-smoothing:antialiased;user-select:none}
     #mini{display:flex;flex-direction:column;height:100%;border:1px solid var(--border);border-radius:10px;overflow:hidden}
     #drag{position:absolute;inset:0 0 auto 0;height:26px;-webkit-app-region:drag}
+    /* Los botones de ventana viven dentro de la franja de arrastre: sin no-drag,
+       app-region:drag se traga sus clics y "no hacen nada" */
+    .winrow{position:absolute;top:2px;right:4px;display:flex;gap:2px;z-index:2;-webkit-app-region:no-drag}
     .row{display:flex;align-items:center;gap:10px;padding:9px 10px 6px;flex:1;min-height:0}
     .art{width:56px;height:56px;border-radius:8px;background:var(--bg3);flex-shrink:0;
       display:flex;align-items:center;justify-content:center;overflow:hidden}
@@ -24,7 +27,6 @@
     .btn.win{width:20px;height:20px}
     .btn.win:hover{color:#fff}
     .btn.win.close:hover{color:#e22134}
-    .winrow{position:absolute;top:2px;right:4px;display:flex;gap:2px;z-index:2}
     .bar{height:3px;background:var(--bg3);margin:0 10px 9px;border-radius:2px;overflow:hidden;cursor:default}
     .bar-fill{height:100%;width:0%;background:var(--t1);border-radius:2px;transition:width .3s linear}
   </style>
