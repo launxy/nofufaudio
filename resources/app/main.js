@@ -45,7 +45,7 @@ function startStreamProxy() {
           port: parsed.port || (parsed.protocol === 'http:' ? 80 : 443),
           path: parsed.pathname + parsed.search,
           method: isHead ? 'HEAD' : 'GET',
-          timeout: 15000,
+          timeout: 30000, // idle: conexiones lentas legítimas no deben morir a los 15 s
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
             'Accept': '*/*',

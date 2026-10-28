@@ -244,35 +244,83 @@ function renderPlaylistViewThrottled(pl) {
 }
 
 // ============ Cola persistente ============
-// La cola se guarda (pistas, índice y posición) para reanudarla al abrir.
-// Las URLs de stream caducan, así que las pistas de YouTube se marcan lazy de nuevo.
-function _queueSaveState() {
-  return {
-    tracks: queue.map(t => {
-      const c = _cleanTrackForDisk(t);
-      if (c.type === 'youtube') { c.url = ''; c.lazy = true; }
-      return c;
-    }),
-    index: currentIndex,
-    position: (isPlaying && audioPlayer.duration) ? audioPlayer.currentTime : (_resumePosition || 0),
-    ts: Date.now(),
-  };
+// nfa_queue guarda solo ids (rehidratados desde la biblioteca) y las pistas que no
+// están en ella; nfa_queue_pos guarda índice+posición y es diminuta para poder
+// escribirse cada pocos segundos sin serializar la cola entera con carátulas base64.
+const _qPosKey = 'nfa_queue_pos';
+
+function _queuePayload() {
+  const libIds = new Set(library.map(t => t.id));
+  const ids = [];
+  const extras = {};
+  for (const t of queue) {
+    ids.push(t.id);
+    if (!libIds.has(t.id)) extras[t.id] = _cleanTrackForDisk(t);
+  }
+  return { v: 2, ids, extras };
 }
+
 function saveQueueNow() {
-  if (!queue.length) { try { localStorage.removeItem(KEYS.queue); } catch {} return; }
-  try { localStorage.setItem(KEYS.queue, JSON.stringify(_queueSaveState())); } catch {}
+  if (!queue.length) {
+    try { localStorage.removeItem(KEYS.queue); } catch {}
+    try { localStorage.removeItem(_qPosKey); } catch {}
+    return;
+  }
+  try { localStorage.setItem(KEYS.queue, JSON.stringify(_queuePayload())); } catch {}
+  _saveQueuePos();
+}
+
+// Guardado barato de solo índice+posición (lo llama el tick de 5 s de timeupdate)
+function _saveQueuePos() {
+  if (!queue.length) return;
+  try {
+    localStorage.setItem(_qPosKey, JSON.stringify({
+      index: currentIndex,
+      position: (isPlaying && audioPlayer.duration) ? audioPlayer.currentTime : (_resumePosition || 0),
+      ts: Date.now(),
+    }));
+  } catch {}
 }
 const saveQueueSoon = _debounce(saveQueueNow, 800);
 
 let _resumePosition = 0;
+function _reviveQueueTrack(base) {
+  if (!base) return null;
+  const c = { ...base };
+  if (c.type === 'youtube') { c.url = ''; c.lazy = true; }
+  delete c._resolving;
+  delete c._albumChecked;
+  return c;
+}
+
 function restoreSavedQueue() {
-  let saved = null;
+  let saved = null, pos = null;
   try { saved = JSON.parse(localStorage.getItem(KEYS.queue) || 'null'); } catch {}
-  if (!saved || !Array.isArray(saved.tracks) || !saved.tracks.length) return false;
-  queue = saved.tracks.map(t => ({ ...t }));
-  const idx = Number.isInteger(saved.index) ? saved.index : 0;
-  currentIndex = (idx >= 0 && idx < queue.length) ? idx : 0;
-  _resumePosition = Math.max(0, Number(saved.position) || 0);
+  try { pos = JSON.parse(localStorage.getItem(_qPosKey) || 'null'); } catch {}
+
+  let tracks = null, index = 0, position = 0;
+  if (saved && saved.v === 2 && Array.isArray(saved.ids)) {
+    const libById = new Map(library.map(t => [t.id, t]));
+    tracks = saved.ids.map(id => {
+      if (typeof id !== 'string') return null;
+      const base = (saved.extras && saved.extras[id]) || libById.get(id) || null;
+      return _reviveQueueTrack(base);
+    }).filter(Boolean);
+  } else if (saved && Array.isArray(saved.tracks) && saved.tracks.length) {
+    // Formato antiguo (1.4.8 con pistas completas)
+    tracks = saved.tracks.map(t => _reviveQueueTrack(t));
+    index = Number.isInteger(saved.index) ? saved.index : 0;
+    position = Math.max(0, Number(saved.position) || 0);
+  }
+  if (!tracks || !tracks.length) return false;
+
+  if (pos) {
+    if (Number.isInteger(pos.index)) index = pos.index;
+    position = Math.max(0, Number(pos.position) || 0);
+  }
+  queue = tracks;
+  currentIndex = (index >= 0 && index < queue.length) ? index : 0;
+  _resumePosition = position;
   const t = queue[currentIndex];
   if (t) {
     try { syncNowPlayingHeader(t); } catch (_) {}
@@ -1190,7 +1238,7 @@ function setupEventListeners() {
     const now = Date.now();
     if (now - _lastPosSave > 5000) {
       _lastPosSave = now;
-      saveQueueSoon();
+      _saveQueuePos(); // barato: solo índice + posición
       _scrobbleTick();
       _syncMiniTime();
     }
@@ -1234,6 +1282,7 @@ function setupEventListeners() {
   audioPlayer.addEventListener('error', async () => {
     const code = audioPlayer.error?.code ?? 0;
     if (code === 1 ) return;
+    if (!audioPlayer.src && !audioPlayer.currentSrc) return; // sin fuente real (p. ej. reset nuestro)
     if (_audioRetryInProgress) return;
 
     const t = (currentIndex >= 0) ? queue[currentIndex] : null;
@@ -1264,12 +1313,21 @@ function setupEventListeners() {
 
     _audioRetryCount = 0;
     _audioRetryInProgress = false;
+    _failStreak++;
     hideLoading();
-    showToast('No se pudo reproducir. Comprueba tu conexión.');
+    if (_failStreak < 3) {
+      showToast('No se pudo reproducir, saltando…');
+      _safePlayTrack((currentIndex + 1) % queue.length);
+    } else {
+      _failStreak = 0;
+      showToast('Varias canciones seguidas fallaron. Comprueba tu conexión.');
+    }
   });
   audioPlayer.addEventListener('playing', () => {
     _audioRetryCount = 0;
     _audioRetryInProgress = false;
+    _recoverStreak = 0;
+    _failStreak = 0;
   });
 
   window.addEventListener('dragover', e => e.preventDefault());
@@ -2361,6 +2419,7 @@ async function resolveLazyTrack(t, { silent = false } = {}) {
   })();
 
   try { return await t._resolving; }
+  catch (e) { console.warn('[resolve] error inesperado:', e); return false; }
   finally { t._resolving = null; }
 }
 
@@ -2518,6 +2577,60 @@ function syncNowPlayingHeader(t) {
   } catch (e) {}
 }
 
+// ============ Recuperación de reproducción ============
+// Un stream colgado (red, proxy, throttle de YouTube) no genera 'error' ni 'ended':
+// sin watchdog la canción se queda parada para siempre y sin rastro en consola.
+let _recovering = false;
+let _recoverStreak = 0; // recuperaciones consecutivas sin llegar a sonar
+let _failStreak = 0;    // pistas seguidas que no llegan a sonar
+
+function _safePlayTrack(i) {
+  return Promise.resolve(playTrack(i)).catch(e => {
+    console.warn('[playback] playTrack falló:', e);
+    try { hideLoading(); } catch (_) {}
+  });
+}
+
+function _recoverPlayback(reason) {
+  if (_recovering) return;
+  const t = currentIndex >= 0 ? queue[currentIndex] : null;
+  if (!t) return;
+  if (_recoverStreak >= 3 || _failStreak >= 3) {
+    console.warn('[playback] demasiados fallos seguidos; se detiene la recuperación automática');
+    showToast('Reproducción interrumpida: comprueba tu conexión');
+    _recoverStreak = 0; _failStreak = 0;
+    return;
+  }
+  _recovering = true;
+  _recoverStreak++;
+  const pos = audioPlayer.currentTime || 0;
+  console.warn('[playback] recuperación (' + reason + '):', t.title, 'en', Math.round(pos) + 's');
+  if (t.type === 'youtube') { t.lazy = true; t.url = ''; t._resolving = null; }
+  if (pos > 0) _resumePosition = pos; // playTrack la consume tras load()
+  try { audioPlayer.src = ''; audioPlayer.load(); } catch (_) {}
+  _safePlayTrack(currentIndex).finally(() => { _recovering = false; });
+}
+
+// Watchdog: si el tiempo no avanza ~12 s con el player "reproduciendo", recupera
+let _wdLast = -1, _wdStall = 0;
+setInterval(() => {
+  if (audioPlayer.paused || currentIndex < 0) { _wdStall = 0; _wdLast = -1; return; }
+  if (_recovering) return;
+  const ct = audioPlayer.currentTime || 0;
+  const dur = audioPlayer.duration || 0;
+  if (audioPlayer.networkState === 3) { _recoverPlayback('no-source'); return; } // NETWORK_NO_SOURCE
+  const nearEnd = dur > 0 && (dur - ct) < 8; // el final lo gestiona 'ended'
+  if (!nearEnd) {
+    if (_wdLast >= 0 && Math.abs(ct - _wdLast) < 0.2) {
+      _wdStall++;
+      if (_wdStall >= 3) { _wdStall = 0; _recoverPlayback('stall'); }
+    } else {
+      _wdStall = 0;
+    }
+  }
+  _wdLast = ct;
+}, 4000);
+
 async function playTrack(index) {
   if (index < 0 || index >= queue.length) return;
   currentIndex = index;
@@ -2564,9 +2677,31 @@ async function playTrack(index) {
   showLoading('Abriendo stream…');
 
   if (t.type === 'youtube' && t.lazy && (!t.url || !t.url.startsWith('http'))) {
-    const ok = await resolveLazyTrack(t, { silent: false });
+    let ok = false;
+    try { ok = await resolveLazyTrack(t, { silent: false }); }
+    catch (e) { console.warn('[playback] error resolviendo:', e); }
     if (_myGen !== _playGeneration) { hideLoading(); return; }
-    if (!ok) { hideLoading(); return; }
+    if (!ok) {
+      // Reintento con calma (rate-limit / red inestable) antes de rendirse
+      await new Promise(r => setTimeout(r, 4000));
+      if (_myGen !== _playGeneration) { hideLoading(); return; }
+      try { ok = await resolveLazyTrack(t, { silent: true }); }
+      catch (e) { ok = false; }
+      if (_myGen !== _playGeneration) { hideLoading(); return; }
+    }
+    if (!ok) {
+      // No cortar la sesión: saltar a la siguiente (con límite para no girar en círculos)
+      _failStreak++;
+      hideLoading();
+      if (_failStreak >= 3) {
+        _failStreak = 0;
+        showToast('Varias canciones seguidas no se pudieron resolver. Comprueba tu conexión.');
+        return;
+      }
+      showToast('No se pudo reproducir "' + (t.title || '') + '" — saltando');
+      _safePlayTrack((currentIndex + 1) % queue.length);
+      return;
+    }
     syncNowPlayingHeader(t);
     await updateMediaSessionMetadata(t, _myGen);
   }
@@ -2633,20 +2768,20 @@ function playNext() {
     if (queue.length > 1) {
       while (next === currentIndex) next = Math.floor(Math.random() * queue.length);
     }
-    playTrack(next);
+    _safePlayTrack(next);
   } else if (isRadio && currentIndex >= queue.length - 1 && !isRepeat) {
     // Radio infinita: extender la cola con canciones similares antes de avanzar
-    _radioExtend().then(() => {
-      playTrack((currentIndex + 1) % queue.length);
-    });
+    Promise.resolve(_radioExtend())
+      .then(() => _safePlayTrack((currentIndex + 1) % queue.length))
+      .catch(e => console.warn('[radio] extensión falló:', e));
   } else {
-    playTrack((currentIndex + 1) % queue.length);
+    _safePlayTrack((currentIndex + 1) % queue.length);
   }
 }
 function playPrev() {
   if (!queue.length) return;
   if (audioPlayer.currentTime > 4) { audioPlayer.currentTime = 0; return; }
-  playTrack((currentIndex - 1 + queue.length) % queue.length);
+  _safePlayTrack((currentIndex - 1 + queue.length) % queue.length);
 }
 function linearToAudioVolume(pct) {
   return Math.pow(pct, 3);
