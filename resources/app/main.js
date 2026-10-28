@@ -658,11 +658,17 @@ async function resolveWithYtDlp(videoId) {
   let cookieArgs = [];
   try { cookieArgs = await getCookieArgs().catch(() => []); } catch (_) { cookieArgs = []; }
 
+  // Clientes que siguen devolviendo URLs reproducibles (el cliente por defecto
+  // de yt-dlp, TVHTML5, ahora da 403 en googlevideo tras los cambios de YouTube).
   const attempts = [
+    { extra: ['--extractor-args', 'youtube:player_client=android,web'], fmt: ORIG_FMT },
+    { extra: ['--extractor-args', 'youtube:player_client=android,web'], fmt: 'bestaudio/best' },
     { extra: [], fmt: ORIG_FMT },
     { extra: [], fmt: 'bestaudio/best' },
   ];
   if (cookieArgs.length) {
+    attempts.push({ extra: [...cookieArgs, '--extractor-args', 'youtube:player_client=android,web'], fmt: ORIG_FMT });
+    attempts.push({ extra: [...cookieArgs, '--extractor-args', 'youtube:player_client=android,web'], fmt: 'bestaudio/best' });
     attempts.push({ extra: [...cookieArgs], fmt: ORIG_FMT });
     attempts.push({ extra: [...cookieArgs], fmt: 'bestaudio/best' });
   }
