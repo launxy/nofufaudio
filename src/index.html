@@ -1,0 +1,1549 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nofufaudio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Titlebar -->
+  <div class="titlebar">
+    <div class="titlebar-drag"></div>
+    <!-- ── SIDEBAR TOGGLE (integrado en titlebar) ── -->
+    <button class="sidebar-toggle-btn" id="btn-sidebar-toggle" title="Mostrar/Ocultar panel lateral">
+      <svg class="sidebar-toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M11 19l-7-7 7-7"/><path d="M19 19l-7-7 7-7"/>
+      </svg>
+    </button>
+    <div class="titlebar-logo">
+      <!-- Logo SVG icono N en circulo negro (como la imagen de referencia) -->
+      <svg class="logo-icon-svg" width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="13" cy="13" r="12.5" fill="#fff" stroke="#fff" stroke-width="0.5"/>
+        <text x="13" y="18" text-anchor="middle" font-family="DM Sans, sans-serif" font-weight="800" font-size="14" fill="#000">N</text>
+      </svg>
+      <span class="logo-text">ofufaudio</span>
+    </div>
+
+    <!-- ── YOUTUBE SEARCH BAR (titlebar centre) ── -->
+    <div class="titlebar-search" id="titlebar-search">
+      <div class="tsearch-wrap">
+        <button class="search-mode-toggle" id="search-mode-toggle" title="Cambiar modo de búsqueda">
+          <!-- YouTube icon -->
+          <svg class="search-mode-icon" id="search-icon-yt" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+          <!-- Spotify icon -->
+          <svg class="search-mode-icon" id="search-icon-sp" width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+        </button>
+        <svg class="tsearch-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input class="tsearch-input" id="yt-search-input" type="text" placeholder="Buscar en YouTube…" autocomplete="off" spellcheck="false">
+        <button class="tsearch-clear" id="yt-search-clear" title="Limpiar">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="titlebar-right-actions">
+      <button class="tbar-settings-btn" id="btn-reload" title="Reiniciar app  (Ctrl+R / F5)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.35"/>
+        </svg>
+      </button>
+      <button class="tbar-settings-btn" id="btn-theme" title="Personalizar tema">
+          <circle cx="6" cy="12" r="2.5"/><circle cx="11" cy="19.5" r="2.5"/>
+          <path d="M15.5 7.5L17 11M8.5 12.5L9.5 17M7.5 11L12.5 7.5M14.5 16.5L17.5 15"/>
+        </svg>
+      </button>
+      <button class="tbar-settings-btn" id="btn-settings" title="Configuración">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+      <div class="titlebar-controls">
+        <button class="tbar-btn" id="btn-minimize"><svg width="10" height="2" viewBox="0 0 10 2"><rect width="10" height="1.5" rx="1" fill="currentColor"/></svg></button>
+        <button class="tbar-btn" id="btn-maximize"><svg width="10" height="10" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
+        <button class="tbar-btn btn-close" id="btn-close"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M1 1l8 8M9 1L1 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-layout">
+
+    <!-- ── SIDEBAR ── -->
+    <nav class="sidebar" id="sidebar-left">
+      <div class="sidebar-scroll">
+        <div class="nav-section">
+          <button class="nav-item active" data-view="home">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Inicio
+          </button>
+          <button class="nav-item" data-view="queue">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            Cola
+          </button>
+          <button class="nav-item" data-view="library">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            Biblioteca
+          </button>
+          <button class="nav-item" data-view="favorites">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            Favoritos
+          </button>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <div class="sidebar-group">
+          <div class="sidebar-group-label">Importar</div>
+          <button class="sidebar-btn" id="btn-import-files">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            Archivos de audio
+          </button>
+          <button class="sidebar-btn" id="btn-import-folder">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            Carpeta completa
+          </button>
+        </div>
+
+        <div class="sidebar-group">
+          <div class="sidebar-group-label">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.6">
+              <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+            </svg>
+            YouTube
+          </div>
+          <div class="yt-input-wrap">
+            <input type="text" id="url-input" placeholder="Enlace de vídeo o playlist de YT…" autocomplete="off" spellcheck="false">
+            <button id="url-add-btn">
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+          <div class="url-status" id="url-status"></div>
+        </div>
+
+        <div class="sidebar-group">
+          <div class="sidebar-group-label">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.6;color:#1db954">
+              <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+            </svg>
+            Spotify
+          </div>
+          <div class="yt-input-wrap">
+            <input type="text" id="sp-url-input" placeholder="Enlace de playlist de Spotify…" autocomplete="off" spellcheck="false">
+            <button id="sp-url-add-btn">
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+          <div class="url-status" id="sp-url-status"></div>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <div class="sidebar-group">
+          <div class="sidebar-group-label" style="display:flex;align-items:center;justify-content:space-between">
+            Playlists
+            <button class="icon-btn-small" id="btn-new-playlist" title="Nueva playlist">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+          <div id="playlist-list-sidebar"></div>
+        </div>
+      </div>
+
+      <!-- Now playing mini card -->
+      <div class="now-playing-card" id="now-playing-card">
+        <div class="np-art-wrap" id="art-frame">
+          <div class="np-art-placeholder" id="art-placeholder">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M9 18V5l12-2v13" stroke-linecap="round"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          </div>
+          <img id="art-image" src="" alt="" style="display:none">
+        </div>
+        <div class="np-meta">
+          <div class="np-source" id="track-source"></div>
+          <div class="np-title" id="track-title">Nofufaudio</div>
+          <div class="np-artist" id="track-artist">Tu reproductor híbrido</div>
+        </div>
+      </div>
+
+      <div class="drop-overlay" id="drop-overlay">
+        <div class="drop-inner">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <span>Suelta canciones aquí</span>
+        </div>
+      </div>
+    </nav>
+
+    <!-- ── MAIN CONTENT ── -->
+    <main class="main-content">
+
+      <!-- HOME VIEW -->
+      <div class="view" id="view-home">
+        <div class="home-scroll">
+          <div class="home-greeting" id="home-greeting">Buenas tardes</div>
+
+          <!-- Recently played -->
+          <section class="home-section" id="home-recents-section">
+            <div class="home-section-header">
+              <span class="home-section-title">Reproducido recientemente</span>
+            </div>
+            <div class="home-shelf" id="home-recents-shelf">
+              <div class="home-empty-hint">Aún no has reproducido nada</div>
+            </div>
+          </section>
+
+          <!-- Playlists -->
+          <section class="home-section" id="home-playlists-section">
+            <div class="home-section-header">
+              <span class="home-section-title">Tus playlists</span>
+              <button class="home-section-link" id="home-see-all-playlists">Ver todo</button>
+            </div>
+            <div class="home-shelf" id="home-playlists-shelf">
+              <div class="home-empty-hint">Importa una playlist para verla aquí</div>
+            </div>
+          </section>
+
+          <!-- Library quick grid -->
+          <section class="home-section" id="home-library-section">
+            <div class="home-section-header">
+              <span class="home-section-title">Tu biblioteca</span>
+              <button class="home-section-link" id="home-see-all-library">Ver todo</button>
+            </div>
+            <div class="home-shelf" id="home-library-shelf">
+              <div class="home-empty-hint">Importa canciones para verlas aquí</div>
+            </div>
+          </section>
+
+          <!-- Favorites quick grid -->
+          <section class="home-section" id="home-favorites-section">
+            <div class="home-section-header">
+              <span class="home-section-title">Favoritos</span>
+              <button class="home-section-link" id="home-see-all-favorites">Ver todo</button>
+            </div>
+            <div class="home-shelf" id="home-favorites-shelf">
+              <div class="home-empty-hint">Marca canciones como favoritas</div>
+            </div>
+          </section>
+
+        </div>
+      </div>
+
+      <!-- QUEUE VIEW -->
+      <div class="view" id="view-queue">
+        <div class="content-header">
+          <h2 class="content-title">Cola de reproducción</h2>
+          <div class="queue-actions">
+            <button class="pill-btn" id="btn-shuffle-queue">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+              Aleatorio
+            </button>
+            <button class="pill-btn" id="btn-repeat-queue">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+              Repetir
+            </button>
+            <button class="pill-btn pill-btn--danger" id="btn-clear-queue">Limpiar</button>
+          </div>
+        </div>
+        <div class="queue-scroll">
+          <div class="queue-empty" id="queue-empty">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.25"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            <p>Tu cola está vacía</p>
+            <span>Importa archivos o añade un enlace de YouTube</span>
+          </div>
+          <div class="queue-list" id="queue-list"></div>
+        </div>
+      </div>
+
+      <!-- LIBRARY VIEW -->
+      <div class="view" id="view-library">
+        <div class="content-header">
+          <h2 class="content-title">Biblioteca</h2>
+          <div class="queue-actions">
+            <button class="pill-btn" id="btn-import-files-2">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+              Añadir archivos
+            </button>
+            <button class="pill-btn pill-btn--danger" id="btn-clear-library">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+              Borrar todo
+            </button>
+          </div>
+        </div>
+        <div class="queue-scroll">
+          <div class="queue-empty" id="library-empty">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.25"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            <p>Biblioteca vacía</p>
+            <span>Importa canciones para construir tu biblioteca</span>
+          </div>
+          <div class="queue-list" id="library-list"></div>
+        </div>
+      </div>
+
+      <!-- FAVORITES VIEW -->
+      <div class="view" id="view-favorites">
+        <div class="content-header">
+          <h2 class="content-title">Favoritos</h2>
+        </div>
+        <div class="queue-scroll">
+          <div class="queue-empty" id="favorites-empty">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.25"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <p>Sin favoritos aún</p>
+            <span>Pulsa el corazón en cualquier canción para guardarla aquí</span>
+          </div>
+          <div class="queue-list" id="favorites-list"></div>
+        </div>
+      </div>
+
+      <!-- PLAYLIST VIEW -->
+      <div class="view" id="view-playlist">
+        <div class="playlist-hero">
+          <div class="playlist-hero-art" id="playlist-hero-art">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.4"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            <input type="file" id="playlist-cover-input" accept="image/*" style="display:none">
+            <div class="playlist-hero-art-overlay" id="playlist-art-overlay">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Cambiar portada
+            </div>
+          </div>
+          <div class="playlist-hero-info">
+            <div class="playlist-hero-type">Playlist</div>
+            <h1 class="playlist-hero-name" id="playlist-hero-name" contenteditable="true" spellcheck="false">Nombre</h1>
+            <div class="playlist-hero-count" id="playlist-hero-count">0 canciones</div>
+            <div class="playlist-hero-actions">
+              <button class="hero-play-btn" id="playlist-play-btn">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4.5 3.5l11 5.5-11 5.5V3.5z" fill="currentColor"/></svg>
+              </button>
+              <button class="pill-btn" id="playlist-add-from-queue">+ Añadir cola actual</button>
+              <button class="pill-btn pill-btn--download" id="playlist-download-all-btn">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="margin-right:5px;vertical-align:-1px"><path d="M12 3v13M7 11l5 5 5-5"/><path d="M5 20h14"/></svg>
+                Descargar playlist
+              </button>
+              <button class="pill-btn pill-btn--danger" id="playlist-clear-btn">Borrar canciones</button>
+              <button class="pill-btn pill-btn--danger" id="playlist-delete-btn">Eliminar playlist</button>
+            </div>
+          </div>
+        </div>
+        <div class="queue-scroll">
+          <div class="queue-empty" id="playlist-empty">
+            <p>Playlist vacía</p>
+            <span>Añade canciones con el botón ··· en cualquier canción</span>
+          </div>
+          <div class="queue-list" id="playlist-track-list"></div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- ── LYRICS PANEL ── -->
+    <aside class="lyrics-panel" id="lyrics-panel">
+      <div class="lyrics-resize-handle" id="lyrics-resize-handle"></div>
+      <div class="lyrics-header">
+        <span class="lyrics-title">Letra</span>
+        <div class="lyrics-header-actions">
+          <button class="lyrics-romaji-btn" id="lyrics-romaji-btn" title="Buscar letra en Romaji (japonés)">
+            <span class="romaji-label">ローマ字</span>
+          </button>
+          <button class="icon-btn-small" id="lyrics-close">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="lyrics-art-wrap">
+        <img id="lyrics-art" src="" alt="">
+        <div class="lyrics-art-info">
+          <div class="lyrics-art-title" id="lyrics-track-name">—</div>
+          <div class="lyrics-art-artist" id="lyrics-artist-name">—</div>
+        </div>
+      </div>
+      <div class="lyrics-source-bar" id="lyrics-source-bar" style="display:none">
+        <span id="lyrics-source-label"></span>
+      </div>
+      <div class="lyrics-results-bar" id="lyrics-results-bar" style="display:none">
+        <span class="lyrics-results-label">Varios resultados:</span>
+        <div class="lyrics-results-chips" id="lyrics-results-chips"></div>
+      </div>
+      <div class="lyrics-body" id="lyrics-body">
+        <div class="lyrics-placeholder">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          <span>Reproduce una canción para ver la letra</span>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- ── VISUALIZER FULLSCREEN VIEW ── -->
+  <div class="viz-view" id="viz-view">
+    <div id="viz-bg-layer" class="viz-bg-layer"></div>
+    <canvas id="visualizer" class="viz-view-canvas"></canvas>
+
+    <div class="viz-idle-hint" id="viz-idle-hint">
+      <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.8" opacity="0.18"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+      <span>Reproduce una canción para ver el visualizador</span>
+    </div>
+
+    <div class="viz-track-info" id="viz-track-info">
+      <div class="viz-track-art" id="viz-track-art"></div>
+      <div class="viz-track-meta">
+        <div class="viz-track-title" id="viz-track-title">—</div>
+        <div class="viz-track-artist" id="viz-track-artist">—</div>
+      </div>
+    </div>
+
+    <button class="viz-settings-btn" id="viz-settings-btn" title="Ajustes del visualizador">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    </button>
+
+    <div class="viz-settings-drawer" id="viz-settings-drawer">
+      <div class="viz-sd-header">
+        <span>Ajustes del visualizador</span>
+        <button class="icon-btn-small" id="viz-sd-close">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="viz-sd-body">
+
+        <div class="viz-sd-row">
+          <div class="viz-sd-label">Activar visualizador</div>
+          <label class="eq-enable-toggle">
+            <input type="checkbox" id="viz-sd-enabled" checked>
+            <span class="eq-toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="viz-sd-section-title">Estilo</div>
+        <div class="viz-style-btns">
+          <button class="viz-style-btn active" data-viz-style="bars">Barras</button>
+          <button class="viz-style-btn" data-viz-style="mirror">Espejo</button>
+          <button class="viz-style-btn" data-viz-style="wave">Onda</button>
+          <button class="viz-style-btn" data-viz-style="dots">Puntos</button>
+          <button class="viz-style-btn" data-viz-style="line">Línea</button>
+          <button class="viz-style-btn" data-viz-style="circle">Círculo</button>
+        </div>
+
+        <div class="viz-sd-section-title">Color</div>
+        <div class="viz-color-row">
+          <input type="color" id="viz-sd-color" value="#ffffff" class="viz-color-input">
+          <div class="viz-quick-colors">
+            <button class="viz-qc" style="background:#ffffff" data-vc="#ffffff" title="Blanco"></button>
+            <button class="viz-qc" style="background:#1db954" data-vc="#1db954" title="Verde"></button>
+            <button class="viz-qc" style="background:#5865f2" data-vc="#5865f2" title="Azul"></button>
+            <button class="viz-qc" style="background:#ff4b4b" data-vc="#ff4b4b" title="Rojo"></button>
+            <button class="viz-qc" style="background:#f59e0b" data-vc="#f59e0b" title="Ámbar"></button>
+            <button class="viz-qc" style="background:#a855f7" data-vc="#a855f7" title="Morado"></button>
+            <button class="viz-qc" style="background:#06b6d4" data-vc="#06b6d4" title="Cyan"></button>
+            <button class="viz-qc viz-qc--accent" data-vc="accent" title="Acento del tema"></button>
+          </div>
+        </div>
+
+        <div class="viz-sd-section-title">Sensibilidad</div>
+        <div class="viz-sd-row viz-sd-row--slider">
+          <input type="range" class="nc-range" id="viz-sd-sensitivity" min="1" max="5" step="0.1" value="1.5">
+          <span class="nc-val-label" id="viz-sd-sensitivity-val">1.5×</span>
+        </div>
+
+        <div class="viz-sd-section-title">Opacidad</div>
+        <div class="viz-sd-row viz-sd-row--slider">
+          <input type="range" class="nc-range" id="viz-sd-opacity" min="10" max="100" step="5" value="90">
+          <span class="nc-val-label" id="viz-sd-opacity-val">90%</span>
+        </div>
+
+        <div class="viz-sd-row" style="margin-top:4px">
+          <div class="viz-sd-label">Glow / sombra</div>
+          <label class="eq-enable-toggle">
+            <input type="checkbox" id="viz-sd-shadow" checked>
+            <span class="eq-toggle-slider"></span>
+          </label>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PLAYER BAR ── -->
+  <footer class="player-bar">
+    <div class="bar-left">
+      <div class="bar-art" id="bar-art" title="Ver letra"></div>
+      <div class="bar-track-info">
+        <div class="bar-title" id="bar-title-display">—</div>
+        <div class="bar-artist" id="bar-artist-display">—</div>
+      </div>
+      <button class="bar-fav-btn" id="bar-fav-btn" title="Favorito">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      </button>
+    </div>
+
+    <div class="bar-center">
+      <div class="transport">
+        <button class="t-btn t-btn--toggle" id="btn-shuffle" title="Aleatorio">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+        </button>
+        <button class="t-btn" id="btn-prev">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
+        </button>
+        <button class="t-btn t-btn--play" id="btn-play">
+          <svg id="play-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          <svg id="pause-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+        </button>
+        <!-- FIXED next button: clean skip-forward icon -->
+        <button class="t-btn" id="btn-next" title="Siguiente">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M16 6h2v12h-2V6z"/>
+            <path d="M14.5 12L6 6v12l8.5-6z"/>
+          </svg>
+        </button>
+        <button class="t-btn t-btn--toggle" id="btn-repeat" title="Repetir">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        </button>
+      </div>
+      <div class="progress-row">
+        <span class="t-time" id="time-current">0:00</span>
+        <div class="progress-track" id="progress-track">
+          <div class="progress-fill" id="progress-fill"></div>
+          <div class="progress-thumb" id="progress-thumb"></div>
+        </div>
+        <span class="t-time" id="time-total">0:00</span>
+      </div>
+    </div>
+
+    <div class="bar-right">
+      <button class="eq-toggle-btn" id="btn-lyrics-toggle" title="Mostrar/Ocultar letra">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="2" width="6" height="11" rx="3"/>
+          <path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="9" y1="22" x2="15" y2="22"/>
+        </svg>
+      </button>
+      <button class="eq-toggle-btn" id="btn-nightcore" title="Nightcore / Velocidad / Pitch">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+        </svg>
+      </button>
+      <button class="eq-toggle-btn" id="btn-viz" title="Visualizador">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 20 Q6 4 10 12 Q14 20 18 8 Q20 2 22 10"/>
+        </svg>
+      </button>
+      <button class="eq-toggle-btn" id="btn-eq" title="Ecualizador">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
+          <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
+          <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
+          <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/>
+          <line x1="17" y1="16" x2="23" y2="16"/>
+        </svg>
+      </button>
+      <button class="vol-icon-btn" id="btn-mute">
+        <svg id="vol-icon-on" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+        <svg id="vol-icon-off" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="display:none"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+      </button>
+      <div class="vol-track" id="vol-track">
+        <div class="vol-fill" id="vol-fill" style="width:80%"></div>
+        <div class="vol-thumb" id="vol-thumb" style="left:80%"></div>
+      </div>
+      <input type="number" id="vol-number-input" class="vol-number-input" min="0" max="100" value="80" title="Volumen exacto">
+    </div>
+  </footer>
+
+  <!-- MODAL: Nueva Playlist -->
+  <div class="modal-backdrop" id="modal-backdrop">
+    <div class="modal" id="modal-new-playlist">
+      <div class="modal-header">
+        <span>Nueva playlist</span>
+        <button class="icon-btn-small" id="modal-close"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-art-pick" id="modal-art-pick">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          <span>Añadir portada</span>
+          <input type="file" id="modal-cover-input" accept="image/*" style="display:none">
+        </div>
+        <img id="modal-art-preview" src="" alt="" style="display:none;width:100px;height:100px;object-fit:cover;border-radius:8px;cursor:pointer">
+        <input class="modal-input" type="text" id="modal-playlist-name" placeholder="Nombre de la playlist" maxlength="60">
+      </div>
+      <div class="modal-footer">
+        <button class="pill-btn" id="modal-cancel">Cancelar</button>
+        <button class="pill-btn pill-btn--white" id="modal-create">Crear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Editar canción -->
+  <div class="modal-backdrop" id="modal-edit-backdrop">
+    <div class="modal" id="modal-edit-track">
+      <div class="modal-header">
+        <span>Editar canción</span>
+        <button class="icon-btn-small" id="modal-edit-close"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <div class="edit-cover-wrap" id="edit-cover-wrap">
+          <div class="modal-art-pick" id="edit-art-pick">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/></svg>
+            <span>Cambiar portada</span>
+          </div>
+          <img id="edit-art-preview" src="" alt="" style="display:none;width:100px;height:100px;object-fit:cover;border-radius:8px;cursor:pointer">
+          <input type="file" id="edit-cover-input" accept="image/*" style="display:none">
+        </div>
+        <input class="modal-input" type="text" id="edit-title-input" placeholder="Título" maxlength="120">
+        <input class="modal-input" type="text" id="edit-artist-input" placeholder="Artista" maxlength="80">
+      </div>
+      <div class="modal-footer">
+        <button class="pill-btn" id="modal-edit-cancel">Cancelar</button>
+        <button class="pill-btn pill-btn--white" id="modal-edit-save">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Configuración -->
+  <div class="modal-backdrop" id="modal-settings-backdrop">
+    <div class="modal modal--wide" id="modal-settings">
+      <div class="modal-header">
+        <span>⚙️ Configuración</span>
+        <button class="icon-btn-small" id="modal-settings-close"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+      </div>
+      <div class="settings-body">
+        <div class="settings-section">
+          <div class="settings-section-title">Reproducción</div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span>Volumen por defecto</span>
+              <span class="settings-hint">Volumen al iniciar la app</span>
+            </div>
+            <div class="settings-control">
+              <input type="range" id="setting-default-volume" min="0" max="100" value="80" class="settings-range">
+              <span class="settings-value" id="setting-default-volume-val">80%</span>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span>Fade entre canciones</span>
+              <span class="settings-hint">Transición suave de audio</span>
+            </div>
+            <div class="settings-control">
+              <label class="settings-toggle">
+                <input type="checkbox" id="setting-crossfade">
+                <span class="settings-toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="settings-row settings-row--sub" id="crossfade-duration-row" style="display:none">
+            <div class="settings-label">
+              <span>Duración del fade</span>
+            </div>
+            <div class="settings-control">
+              <input type="range" id="setting-crossfade-duration" min="1" max="10" value="3" class="settings-range">
+              <span class="settings-value" id="setting-crossfade-duration-val">3s</span>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span>Normalización de volumen</span>
+              <span class="settings-hint">Iguala el volumen entre canciones</span>
+            </div>
+            <div class="settings-control">
+              <label class="settings-toggle">
+                <input type="checkbox" id="setting-normalize">
+                <span class="settings-toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span>Reproducción continua</span>
+              <span class="settings-hint">Reproducir siguiente automáticamente</span>
+            </div>
+            <div class="settings-control">
+              <label class="settings-toggle">
+                <input type="checkbox" id="setting-autoplay" checked>
+                <span class="settings-toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">Interfaz</div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span>Mostrar duración en lista</span>
+              <span class="settings-hint">Ver tiempo en cada canción</span>
+            </div>
+            <div class="settings-control">
+              <label class="settings-toggle">
+                <input type="checkbox" id="setting-show-duration" checked>
+                <span class="settings-toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span>Animación en la portada</span>
+              <span class="settings-hint">Rotación suave del artwork</span>
+            </div>
+            <div class="settings-control">
+              <label class="settings-toggle">
+                <input type="checkbox" id="setting-spin-art" checked>
+                <span class="settings-toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span>Acento de color</span>
+              <span class="settings-hint">Color principal de la interfaz</span>
+            </div>
+            <div class="settings-control settings-colors">
+              <button class="color-pick active" data-color="#ffffff" style="background:#fff" title="Blanco"></button>
+              <button class="color-pick" data-color="#1db954" style="background:#1db954" title="Verde"></button>
+              <button class="color-pick" data-color="#5865f2" style="background:#5865f2" title="Azul"></button>
+              <button class="color-pick" data-color="#ff4b4b" style="background:#ff4b4b" title="Rojo"></button>
+              <button class="color-pick" data-color="#f59e0b" style="background:#f59e0b" title="Naranja"></button>
+              <button class="color-pick" data-color="#a855f7" style="background:#a855f7" title="Morado"></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">Letra (Lyrics)</div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span>Buscar letra automáticamente</span>
+              <span class="settings-hint">Al reproducir una canción</span>
+            </div>
+            <div class="settings-control">
+              <label class="settings-toggle">
+                <input type="checkbox" id="setting-auto-lyrics">
+                <span class="settings-toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span>Tamaño de letra de lyrics</span>
+            </div>
+            <div class="settings-control">
+              <input type="range" id="setting-lyrics-size" min="11" max="20" value="13" class="settings-range">
+              <span class="settings-value" id="setting-lyrics-size-val">13px</span>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span>Fuente de lyrics</span>
+              <span class="settings-hint">Tipografía para mostrar la letra</span>
+            </div>
+            <div class="settings-control">
+              <select id="setting-lyrics-font" class="settings-select">
+                <option value="inherit">DM Sans (por defecto)</option>
+                <option value="'Georgia', serif">Georgia</option>
+                <option value="'Times New Roman', serif">Times New Roman</option>
+                <option value="'Courier New', monospace">Courier New</option>
+                <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+                <option value="'Palatino Linotype', serif">Palatino</option>
+                <option value="'Garamond', serif">Garamond</option>
+                <option value="system-ui, sans-serif">Sistema</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="settings-row">
+            <div class="settings-label">
+              <span>Resaltado sincronizado</span>
+              <span class="settings-hint">Como Spotify (requiere lyrics sync)</span>
+            </div>
+            <div class="settings-control">
+              <label class="settings-toggle">
+                <input type="checkbox" id="setting-synced-lyrics" checked>
+                <span class="settings-toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">Descargas</div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span>Carpeta de descarga</span>
+              <span class="settings-hint" id="setting-download-dir-display">—</span>
+            </div>
+            <div class="settings-control">
+              <button class="pill-btn" id="setting-pick-download-dir">Elegir…</button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span>Formato de audio</span>
+              <span class="settings-hint">Para descargas desde YouTube</span>
+            </div>
+            <div class="settings-control">
+              <select id="setting-download-format" class="settings-select">
+                <option value="mp3">MP3</option>
+                <option value="m4a">M4A (AAC)</option>
+                <option value="opus">Opus</option>
+                <option value="wav">WAV</option>
+                <option value="flac">FLAC</option>
+                <option value="original">Original (sin convertir)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">Visualizador (NCS)</div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span>Mostrar visualizador</span>
+              <span class="settings-hint">Ondas de sonido sobre la barra del reproductor</span>
+            </div>
+            <div class="settings-control">
+              <label class="settings-toggle">
+                <input type="checkbox" id="setting-viz-enabled" checked>
+                <span class="settings-toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span>Estilo</span>
+            </div>
+            <div class="settings-control">
+              <select id="setting-viz-style" class="settings-select">
+                <option value="bars">Barras</option>
+                <option value="mirror">Espejo</option>
+                <option value="wave">Onda</option>
+                <option value="dots">Puntos</option>
+                <option value="line">Línea</option>
+              </select>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span>Color del visualizador</span>
+            </div>
+            <div class="settings-control">
+              <input type="color" id="setting-viz-color" value="#ffffff" style="width:40px;height:28px;border:none;background:transparent;cursor:pointer">
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span>Sombra / glow</span>
+              <span class="settings-hint">Efecto de brillo</span>
+            </div>
+            <div class="settings-control">
+              <label class="settings-toggle">
+                <input type="checkbox" id="setting-viz-shadow" checked>
+                <span class="settings-toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span>Sensibilidad</span>
+            </div>
+            <div class="settings-control">
+              <input type="range" id="setting-viz-sensitivity" min="1" max="5" step="0.1" value="1.5" class="settings-range">
+              <span class="settings-value" id="setting-viz-sensitivity-val">1.5×</span>
+            </div>
+          </div>
+        </div>
+
+
+        <div class="settings-section">
+          <div class="settings-section-title">Sistema</div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span>Minimizar al tray</span>
+              <span class="settings-hint">Ocultar en bandeja del sistema al minimizar</span>
+            </div>
+            <div class="settings-control">
+              <label class="settings-toggle">
+                <input type="checkbox" id="setting-minimize-tray" checked>
+                <span class="settings-toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span>Cerrar al tray</span>
+              <span class="settings-hint">Al cerrar la ventana, la app sigue en tray</span>
+            </div>
+            <div class="settings-control">
+              <label class="settings-toggle">
+                <input type="checkbox" id="setting-close-tray" checked>
+                <span class="settings-toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="flex-wrap:wrap;gap:6px">
+        <button class="pill-btn" id="settings-export-config" title="Exportar toda la configuración a un archivo">⤓ Exportar config</button>
+        <button class="pill-btn" id="settings-import-config" title="Importar configuración de un archivo">⤒ Importar config</button>
+        <button class="pill-btn" id="settings-open-config-folder" title="Abrir carpeta nofufaudioConfigs">📁 Carpeta</button>
+        <div style="flex:1"></div>
+        <button class="pill-btn" id="modal-settings-cancel">Cancelar</button>
+        <button class="pill-btn pill-btn--white" id="modal-settings-save">Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3-DOT CONTEXT MENU (track options) -->
+  <div class="ctx-menu" id="ctx-menu">
+    <div class="ctx-menu-label">Opciones de canción</div>
+    <button class="ctx-item" id="ctx-edit">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      <span>Editar información</span>
+    </button>
+    <button class="ctx-item ctx-item--fav" id="ctx-fav">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      <span>Favorito</span>
+    </button>
+    <button class="ctx-item ctx-item--lib" id="ctx-lib">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      <span>Guardar en biblioteca</span>
+    </button>
+    <button class="ctx-item ctx-item--queue" id="ctx-play-next">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4l10 8-10 8V4z"/><line x1="19" y1="4" x2="19" y2="20" stroke-linecap="round"/></svg>
+      <span>Reproducir siguiente</span>
+    </button>
+    <button class="ctx-item" id="ctx-download">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span>Descargar</span>
+    </button>
+    <div class="ctx-divider"></div>
+    <div class="ctx-menu-label">Añadir a playlist</div>
+    <div id="ctx-playlist-options"></div>
+    <div class="ctx-divider"></div>
+    <button class="ctx-item ctx-item--delete" id="ctx-delete">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+      <span>Eliminar canción</span>
+    </button>
+  </div>
+
+  <!-- ── FULLSCREEN SEARCH VIEW ── -->
+  <div class="search-fullscreen" id="yt-search-panel">
+    <div class="search-fs-header">
+      <button class="search-fs-back" id="yt-search-panel-close" title="Volver">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      </button>
+      <div class="search-fs-source-badge search-fs-source-yt">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+        YouTube
+      </div>
+      <div class="search-fs-query-wrap">
+        <svg class="search-fs-query-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <span class="search-fs-query-text" id="yt-fs-query-text">—</span>
+      </div>
+      <div class="search-fs-count" id="yt-fs-count"></div>
+    </div>
+    <div class="search-fs-body" id="yt-search-results">
+      <div class="yt-search-placeholder" id="yt-search-placeholder">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <p>Escribe para buscar canciones, vídeos y audios</p>
+      </div>
+      <div class="search-fs-list" id="yt-results-list"></div>
+    </div>
+  </div>
+
+  <!-- ── FULLSCREEN SPOTIFY SEARCH VIEW ── -->
+  <div class="search-fullscreen sp-search-panel" id="sp-search-panel">
+    <div class="search-fs-header">
+      <button class="search-fs-back" id="sp-search-panel-close" title="Volver">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      </button>
+      <div class="search-fs-source-badge search-fs-source-sp">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+        Spotify
+      </div>
+      <div class="search-fs-query-wrap">
+        <svg class="search-fs-query-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <span class="search-fs-query-text" id="sp-fs-query-text">—</span>
+      </div>
+      <div class="search-fs-count" id="sp-fs-count"></div>
+    </div>
+    <div class="search-fs-body" id="sp-search-results">
+      <div class="yt-search-placeholder" id="sp-search-placeholder">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="#1db954" opacity="0.2"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+        <p>Busca canciones en el catálogo de Spotify</p>
+      </div>
+      <div class="search-fs-list" id="sp-results-list"></div>
+    </div>
+  </div>
+  <div class="yt-search-overlay" id="yt-search-overlay"></div>
+
+  <div class="loading-overlay" id="loading-overlay" style="display:none">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loading-text">Cargando…</div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <!-- ── DOWNLOADS PANEL ── -->
+  <div class="downloads-panel" id="downloads-panel">
+    <div class="downloads-header">
+      <span>Descargas</span>
+      <button class="icon-btn-small" id="downloads-close" title="Cerrar"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    </div>
+    <div class="downloads-body" id="downloads-body">
+      <div class="downloads-empty">Sin descargas activas</div>
+    </div>
+  </div>
+
+  <!-- THEME CUSTOMIZER PANEL -->
+  <div class="theme-panel" id="theme-panel">
+    <div class="theme-panel-header">
+      <div class="theme-panel-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20c-3 0-5-2-5-5 0-1.5 1-3 1-4.5s-1-3-1-4.5c0-3 2-6 5-6z" fill="currentColor" opacity=".15"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+        Personalizar
+      </div>
+      <button class="icon-btn-small" id="theme-panel-close">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="theme-panel-body">
+
+      <!-- PRESETS -->
+      <div class="tp-section">
+        <div class="tp-section-label">Presets de tema</div>
+        <div class="tp-presets">
+          <button class="tp-preset" data-preset="dark" title="Oscuro clásico">
+            <div class="tp-preset-swatch" style="background:#121212"></div>
+            <span>Dark</span>
+          </button>
+          <button class="tp-preset" data-preset="midnight" title="Midnight azul">
+            <div class="tp-preset-swatch" style="background:#0d1117"></div>
+            <span>Midnight</span>
+          </button>
+          <button class="tp-preset" data-preset="amoled" title="AMOLED negro puro">
+            <div class="tp-preset-swatch" style="background:#000000"></div>
+            <span>AMOLED</span>
+          </button>
+          <button class="tp-preset" data-preset="forest" title="Verde bosque">
+            <div class="tp-preset-swatch" style="background:#0d1f0d"></div>
+            <span>Forest</span>
+          </button>
+          <button class="tp-preset" data-preset="ocean" title="Azul océano">
+            <div class="tp-preset-swatch" style="background:#0a1628"></div>
+            <span>Ocean</span>
+          </button>
+          <button class="tp-preset" data-preset="rose" title="Rosa oscuro">
+            <div class="tp-preset-swatch" style="background:#1a0d10"></div>
+            <span>Rose</span>
+          </button>
+          <button class="tp-preset" data-preset="light" title="Modo claro">
+            <div class="tp-preset-swatch" style="background:#f5f5f5;border:1px solid #ddd"></div>
+            <span>Light</span>
+          </button>
+          <button class="tp-preset" data-preset="coffee" title="Marrón café">
+            <div class="tp-preset-swatch" style="background:#1c1208"></div>
+            <span>Coffee</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- IMAGEN DE FONDO -->
+      <div class="tp-section">
+        <div class="tp-section-label">Imagen de fondo</div>
+        <div class="tp-row" style="flex-direction:column;align-items:flex-start;gap:8px">
+          <div class="tp-bg-image-wrap" id="tp-bg-image-wrap">
+            <div class="tp-bg-image-preview" id="tp-bg-image-preview" style="display:none">
+              <img id="tp-bg-img-tag" src="" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:6px">
+              <button class="tp-bg-remove-btn" id="tp-bg-remove-btn" title="Quitar fondo">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              </button>
+            </div>
+            <button class="tp-action-btn" id="tp-bg-pick-btn" style="width:100%;justify-content:center">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              Elegir imagen
+            </button>
+            <input type="file" id="tp-bg-input" accept="image/*" style="display:none">
+          </div>
+          <div class="tp-row" style="width:100%;padding:0">
+            <div class="tp-row-label">
+              <span class="tp-var-name">Opacidad del fondo</span>
+              <span class="tp-hint">Transparencia sobre la imagen</span>
+            </div>
+            <div class="tp-row-control tp-slider-control">
+              <input type="range" class="tp-range" id="tp-bg-opacity" min="0" max="100" value="60" step="5">
+              <span class="tp-range-val" id="tp-bg-opacity-val">60%</span>
+            </div>
+          </div>
+
+          <div class="tp-row" style="width:100%;padding:0">
+            <div class="tp-row-label">
+              <span class="tp-var-name">Desenfoque (blur)</span>
+              <span class="tp-hint">Suaviza el fondo</span>
+            </div>
+            <div class="tp-row-control tp-slider-control">
+              <input type="range" class="tp-range" id="tp-bg-blur" min="0" max="20" value="0" step="1">
+              <span class="tp-range-val" id="tp-bg-blur-val">0px</span>
+            </div>
+          </div>
+          <div class="tp-row" style="width:100%;padding:0">
+            <div class="tp-row-label">
+              <span class="tp-var-name">Brillo</span>
+              <span class="tp-hint">Oscurecer o aclarar el fondo</span>
+            </div>
+            <div class="tp-row-control tp-slider-control">
+              <input type="range" class="tp-range" id="tp-bg-brightness" min="10" max="200" value="100" step="5">
+              <span class="tp-range-val" id="tp-bg-brightness-val">100%</span>
+            </div>
+          </div>
+          <div class="tp-row" style="width:100%;padding:0">
+            <div class="tp-row-label">
+              <span class="tp-var-name">Ajuste de imagen</span>
+            </div>
+            <div class="tp-row-control">
+              <select class="tp-select" id="tp-bg-fit">
+                <option value="cover">Cover (recortar)</option>
+                <option value="contain">Contain (encajar)</option>
+                <option value="fill">Estirar</option>
+                <option value="none">Sin ajuste</option>
+              </select>
+            </div>
+          </div>
+          <div class="tp-row" style="width:100%;padding:0">
+            <div class="tp-row-label">
+              <span class="tp-var-name">Escala de grises</span>
+              <span class="tp-hint">Quitar colores al fondo</span>
+            </div>
+            <div class="tp-row-control tp-slider-control">
+              <input type="range" class="tp-range" id="tp-bg-grayscale" min="0" max="100" value="0" step="5">
+              <span class="tp-range-val" id="tp-bg-grayscale-val">0%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLORES DE FONDO -->
+      <div class="tp-section">
+        <div class="tp-section-label">Fondos</div>
+
+        <div class="tp-row">
+          <div class="tp-row-label">
+            <span class="tp-var-name">--bg</span>
+            <span class="tp-hint">Fondo principal</span>
+          </div>
+          <div class="tp-row-control">
+            <input type="color" class="tp-color-input" data-var="--bg" id="tp-bg">
+            <span class="tp-color-val" id="tp-bg-val">#121212</span>
+          </div>
+        </div>
+        <div class="tp-row">
+          <div class="tp-row-label">
+            <span class="tp-var-name">--bg2</span>
+            <span class="tp-hint">Fondo secundario</span>
+          </div>
+          <div class="tp-row-control">
+            <input type="color" class="tp-color-input" data-var="--bg2" id="tp-bg2">
+            <span class="tp-color-val" id="tp-bg2-val">#181818</span>
+          </div>
+        </div>
+        <div class="tp-row">
+          <div class="tp-row-label">
+            <span class="tp-var-name">--bg3</span>
+            <span class="tp-hint">Fondo terciario</span>
+          </div>
+          <div class="tp-row-control">
+            <input type="color" class="tp-color-input" data-var="--bg3" id="tp-bg3">
+            <span class="tp-color-val" id="tp-bg3-val">#1f1f1f</span>
+          </div>
+        </div>
+        <div class="tp-row">
+          <div class="tp-row-label">
+            <span class="tp-var-name">--bg4</span>
+            <span class="tp-hint">Hover / cards</span>
+          </div>
+          <div class="tp-row-control">
+            <input type="color" class="tp-color-input" data-var="--bg4" id="tp-bg4">
+            <span class="tp-color-val" id="tp-bg4-val">#282828</span>
+          </div>
+        </div>
+        <div class="tp-row">
+          <div class="tp-row-label">
+            <span class="tp-var-name">Barra del jugador</span>
+            <span class="tp-hint">Titlebar + player bar</span>
+          </div>
+          <div class="tp-row-control">
+            <input type="color" class="tp-color-input" data-var="--bar-bg" id="tp-bar-bg">
+            <span class="tp-color-val" id="tp-bar-bg-val">#0a0a0a</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLORES DE TEXTO -->
+      <div class="tp-section">
+        <div class="tp-section-label">Texto</div>
+        <div class="tp-row">
+          <div class="tp-row-label">
+            <span class="tp-var-name">--t1</span>
+            <span class="tp-hint">Texto principal</span>
+          </div>
+          <div class="tp-row-control">
+            <input type="color" class="tp-color-input" data-var="--t1" id="tp-t1">
+            <span class="tp-color-val" id="tp-t1-val">#ffffff</span>
+          </div>
+        </div>
+        <div class="tp-row">
+          <div class="tp-row-label">
+            <span class="tp-var-name">--t2</span>
+            <span class="tp-hint">Texto secundario</span>
+          </div>
+          <div class="tp-row-control">
+            <input type="color" class="tp-color-input" data-var="--t2" id="tp-t2">
+            <span class="tp-color-val" id="tp-t2-val">#b3b3b3</span>
+          </div>
+        </div>
+        <div class="tp-row">
+          <div class="tp-row-label">
+            <span class="tp-var-name">--t3</span>
+            <span class="tp-hint">Texto sutil / hints</span>
+          </div>
+          <div class="tp-row-control">
+            <input type="color" class="tp-color-input" data-var="--t3" id="tp-t3">
+            <span class="tp-color-val" id="tp-t3-val">#6a6a6a</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACENTO -->
+      <div class="tp-section">
+        <div class="tp-section-label">Color de acento</div>
+        <div class="tp-row">
+          <div class="tp-row-label">
+            <span class="tp-var-name">--accent</span>
+            <span class="tp-hint">Play, activos, highlights</span>
+          </div>
+          <div class="tp-row-control">
+            <input type="color" class="tp-color-input" data-var="--accent" id="tp-accent">
+            <span class="tp-color-val" id="tp-accent-val">#ffffff</span>
+          </div>
+        </div>
+        <div class="tp-accent-quick">
+          <button class="tp-accent-dot" style="background:#ffffff" data-accent="#ffffff" title="Blanco"></button>
+          <button class="tp-accent-dot" style="background:#1db954" data-accent="#1db954" title="Verde Spotify"></button>
+          <button class="tp-accent-dot" style="background:#5865f2" data-accent="#5865f2" title="Discord Azul"></button>
+          <button class="tp-accent-dot" style="background:#ff4b4b" data-accent="#ff4b4b" title="Rojo"></button>
+          <button class="tp-accent-dot" style="background:#f59e0b" data-accent="#f59e0b" title="Ámbar"></button>
+          <button class="tp-accent-dot" style="background:#a855f7" data-accent="#a855f7" title="Morado"></button>
+          <button class="tp-accent-dot" style="background:#06b6d4" data-accent="#06b6d4" title="Cyan"></button>
+          <button class="tp-accent-dot" style="background:#f97316" data-accent="#f97316" title="Naranja"></button>
+          <button class="tp-accent-dot" style="background:#ec4899" data-accent="#ec4899" title="Rosa"></button>
+          <button class="tp-accent-dot" style="background:#84cc16" data-accent="#84cc16" title="Lima"></button>
+        </div>
+      </div>
+
+      <!-- BORDES -->
+      <div class="tp-section">
+        <div class="tp-section-label">Bordes y radios</div>
+        <div class="tp-row">
+          <div class="tp-row-label">
+            <span class="tp-var-name">Radio de bordes</span>
+            <span class="tp-hint">Redondez general (--r8, --r12)</span>
+          </div>
+          <div class="tp-row-control tp-slider-control">
+            <input type="range" class="tp-range" id="tp-radius" min="0" max="20" value="8" step="1">
+            <span class="tp-range-val" id="tp-radius-val">8px</span>
+          </div>
+        </div>
+        <div class="tp-row">
+          <div class="tp-row-label">
+            <span class="tp-var-name">Opacidad de bordes</span>
+            <span class="tp-hint">Visibilidad de separadores</span>
+          </div>
+          <div class="tp-row-control tp-slider-control">
+            <input type="range" class="tp-range" id="tp-border-opacity" min="0" max="40" value="7" step="1">
+            <span class="tp-range-val" id="tp-border-opacity-val">7%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- TIPOGRAFÍA -->
+      <div class="tp-section">
+        <div class="tp-section-label">Tipografía</div>
+        <div class="tp-row">
+          <div class="tp-row-label">
+            <span class="tp-var-name">Fuente principal</span>
+            <span class="tp-hint">Font de toda la UI</span>
+          </div>
+          <div class="tp-row-control">
+            <select class="tp-select" id="tp-font">
+              <!-- Opciones cargadas dinámicamente desde app.js (app + sistema) -->
+            </select>
+          </div>
+        </div>
+        <div class="tp-row">
+          <div class="tp-row-label">
+            <span class="tp-var-name">Tamaño base</span>
+            <span class="tp-hint">Font-size global</span>
+          </div>
+          <div class="tp-row-control tp-slider-control">
+            <input type="range" class="tp-range" id="tp-font-size" min="11" max="16" value="14" step="1">
+            <span class="tp-range-val" id="tp-font-size-val">14px</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- EFECTOS -->
+      <div class="tp-section">
+        <div class="tp-section-label">Efectos visuales</div>
+        <div class="tp-row">
+          <div class="tp-row-label">
+            <span class="tp-var-name">Opacidad de modales</span>
+            <span class="tp-hint">Backdrop blur de ventanas</span>
+          </div>
+          <div class="tp-row-control tp-slider-control">
+            <input type="range" class="tp-range" id="tp-backdrop-opacity" min="40" max="95" value="70" step="5">
+            <span class="tp-range-val" id="tp-backdrop-opacity-val">70%</span>
+          </div>
+        </div>
+        <div class="tp-row">
+          <div class="tp-row-label">
+            <span class="tp-var-name">Gap entre paneles</span>
+            <span class="tp-hint">Espacio entre sidebar/main/lyrics</span>
+          </div>
+          <div class="tp-row-control tp-slider-control">
+            <input type="range" class="tp-range" id="tp-panel-gap" min="0" max="16" value="8" step="2">
+            <span class="tp-range-val" id="tp-panel-gap-val">8px</span>
+          </div>
+        </div>
+        <div class="tp-row">
+          <div class="tp-row-label">
+            <span class="tp-var-name">Barra del reproductor</span>
+            <span class="tp-hint">Altura del player inferior</span>
+          </div>
+          <div class="tp-row-control tp-slider-control">
+            <input type="range" class="tp-range" id="tp-bar-height" min="70" max="110" value="90" step="5">
+            <span class="tp-range-val" id="tp-bar-height-val">90px</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACCIONES -->
+      <div class="tp-section tp-actions-section">
+        <button class="tp-action-btn tp-action-reset" id="tp-reset-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Restablecer todo
+        </button>
+        <button class="tp-action-btn tp-action-export" id="tp-export-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Exportar tema
+        </button>
+        <button class="tp-action-btn tp-action-import" id="tp-import-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Importar tema
+        </button>
+        <input type="file" id="tp-import-file" accept=".json" style="display:none">
+      </div>
+
+    </div>
+  </div>
+  <div class="theme-panel-overlay" id="theme-panel-overlay"></div>
+
+  <!-- ── NIGHTCORE PANEL ── -->
+  <div class="nc-panel" id="nc-panel">
+    <div class="eq-panel-header">
+      <div class="eq-panel-title">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+        </svg>
+        Nightcore
+        <span class="nc-live-badge" id="nc-live-badge">ACTIVO</span>
+      </div>
+      <div class="eq-header-right">
+        <label class="eq-enable-toggle" title="Activar/Desactivar Nightcore">
+          <input type="checkbox" id="nc-enabled">
+          <span class="eq-toggle-slider"></span>
+        </label>
+        <button class="icon-btn-small" id="nc-close">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Presets -->
+    <div class="eq-presets-bar">
+      <button class="eq-preset-btn active" data-nc-preset="nightcore">Nightcore</button>
+      <button class="eq-preset-btn" data-nc-preset="slowed">Slowed</button>
+      <button class="eq-preset-btn" data-nc-preset="vaporwave">Vaporwave</button>
+      <button class="eq-preset-btn" data-nc-preset="speed">Speed Up</button>
+    </div>
+
+    <!-- Controls -->
+    <div class="nc-controls">
+
+      <!-- Speed -->
+      <div class="nc-row">
+        <div class="nc-row-label">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+          <span class="nc-label-text">Velocidad</span>
+          <span class="nc-hint">0.1× — 2×</span>
+        </div>
+        <div class="nc-row-control">
+          <span class="nc-val-label" id="nc-speed-display">1.30×</span>
+          <input type="range" class="nc-range" id="nc-speed" min="10" max="200" step="1" value="130">
+        </div>
+      </div>
+
+      <!-- Pitch -->
+      <div class="nc-row">
+        <div class="nc-row-label">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          <span class="nc-label-text">Pitch</span>
+          <span class="nc-hint">-12 — +12 semitonos</span>
+        </div>
+        <div class="nc-row-control">
+          <span class="nc-val-label" id="nc-pitch-display">+4 st</span>
+          <input type="range" class="nc-range" id="nc-pitch" min="-12" max="12" step="0.5" value="4">
+        </div>
+      </div>
+
+      <!-- Bass boost -->
+      <div class="nc-row">
+        <div class="nc-row-label">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
+          <span class="nc-label-text">Realce agudos</span>
+          <span class="nc-hint">Brillo característico</span>
+        </div>
+        <div class="nc-row-control">
+          <span class="nc-val-label" id="nc-treble-display">+4 dB</span>
+          <input type="range" class="nc-range" id="nc-treble" min="-12" max="12" step="0.5" value="4">
+        </div>
+      </div>
+
+    </div>
+
+    <div class="nc-footer">
+      <button class="eq-action-btn" id="nc-reset-btn">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        Restablecer
+      </button>
+      <div class="nc-footer-info" id="nc-footer-info">
+        <span>Velocidad final: </span><span id="nc-final-speed">1.30×</span>
+      </div>
+    </div>
+  </div>
+  <div class="nc-panel-overlay" id="nc-panel-overlay"></div>
+
+  <!-- ── EQUALIZER PANEL ── -->
+  <div class="eq-panel" id="eq-panel">
+    <div class="eq-panel-header">
+      <div class="eq-panel-title">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
+          <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
+          <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
+          <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/>
+          <line x1="17" y1="16" x2="23" y2="16"/>
+        </svg>
+        Ecualizador
+      </div>
+      <div class="eq-header-right">
+        <label class="eq-enable-toggle" title="Activar/Desactivar ecualizador">
+          <input type="checkbox" id="eq-enabled" checked>
+          <span class="eq-toggle-slider"></span>
+        </label>
+        <button class="icon-btn-small" id="eq-close">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="eq-presets-bar">
+      <button class="eq-preset-btn active" data-preset="flat">Plano</button>
+      <button class="eq-preset-btn" data-preset="bass">Bass</button>
+      <button class="eq-preset-btn" data-preset="treble">Treble</button>
+      <button class="eq-preset-btn" data-preset="vocal">Vocal</button>
+      <button class="eq-preset-btn" data-preset="rock">Rock</button>
+      <button class="eq-preset-btn" data-preset="jazz">Jazz</button>
+      <button class="eq-preset-btn" data-preset="electronic">EDM</button>
+      <button class="eq-preset-btn" data-preset="classical">Clásica</button>
+      <button class="eq-preset-btn" data-preset="pop">Pop</button>
+    </div>
+
+    <!-- Presets de usuario -->
+    <div class="eq-user-presets-row" id="eq-user-presets-row">
+      <span class="eq-user-presets-label">Mis presets:</span>
+      <div class="eq-user-presets-list" id="eq-user-presets-list"></div>
+      <button class="eq-action-btn" id="eq-save-preset-btn" title="Guardar configuración actual como preset">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Guardar preset
+      </button>
+    </div>
+
+    <!-- Modal nombre preset -->
+    <div class="eq-preset-name-modal" id="eq-preset-name-modal" style="display:none;">
+      <div class="eq-preset-name-modal-inner">
+        <span class="eq-preset-name-modal-title">Nombre del preset</span>
+        <input type="text" id="eq-preset-name-input" class="eq-preset-name-input" placeholder="Mi preset..." maxlength="32" />
+        <div class="eq-preset-name-modal-btns">
+          <button class="eq-action-btn" id="eq-preset-name-confirm">Guardar</button>
+          <button class="eq-action-btn" id="eq-preset-name-cancel">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="eq-bands-container" id="eq-bands-container">
+      <!-- Generated by JS -->
+    </div>
+
+    <div class="eq-footer">
+      <div class="eq-gain-display">
+        <span class="eq-gain-label">Ganancia selec.</span>
+        <span class="eq-gain-value" id="eq-gain-display">0.0 dB</span>
+      </div>
+      <div class="eq-footer-actions">
+        <button class="eq-action-btn" id="eq-reset-btn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Restablecer
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="eq-panel-overlay" id="eq-panel-overlay"></div>
+
+  <!-- MODAL: Descargar playlist completa -->
+  <div class="modal-backdrop" id="modal-dl-playlist-backdrop" style="display:none;align-items:center;justify-content:center">
+    <div class="modal" id="modal-dl-playlist" style="max-width:420px;width:90%">
+      <div class="modal-header">
+        <span style="font-weight:600;font-size:15px">Descargar playlist</span>
+        <button class="icon-btn-small" id="modal-dl-playlist-close">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" style="gap:14px">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <label style="font-size:12px;color:var(--t2);font-weight:500;letter-spacing:.4px;text-transform:uppercase">Carpeta de descarga</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div id="modal-dl-playlist-dir-display" style="flex:1;font-size:13px;color:var(--t1);background:var(--bg3);border:1px solid var(--bg5);border-radius:6px;padding:8px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">(no establecida)</div>
+            <button class="pill-btn" id="modal-dl-playlist-pick-dir" style="white-space:nowrap;flex-shrink:0">Elegir…</button>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <label style="font-size:12px;color:var(--t2);font-weight:500;letter-spacing:.4px;text-transform:uppercase">Formato</label>
+          <select id="modal-dl-playlist-format" class="modal-input" style="padding:8px 10px;cursor:pointer">
+            <option value="mp3">MP3</option>
+            <option value="m4a">M4A</option>
+            <option value="ogg">OGG</option>
+            <option value="wav">WAV</option>
+            <option value="flac">FLAC</option>
+            <option value="opus">OPUS</option>
+          </select>
+        </div>
+        <div id="modal-dl-playlist-info" style="font-size:12px;color:var(--t2);background:var(--bg3);border-radius:6px;padding:8px 10px;line-height:1.5"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="pill-btn" id="modal-dl-playlist-cancel">Cancelar</button>
+        <button class="pill-btn pill-btn--white" id="modal-dl-playlist-confirm">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="margin-right:4px;vertical-align:-1px"><path d="M12 3v13M7 11l5 5 5-5"/><path d="M5 20h14"/></svg>
+          Descargar todo
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
