@@ -506,25 +506,64 @@ async function getCookieArgs() {
   return cookieBrowser ? ['--cookies-from-browser', cookieBrowser] : [];
 }
 
-function findYtDlp() {
-  const isWin = process.platform === 'win32';
+// ============================================================
+// yt-dlp / ffmpeg: localización, binario ACTUALIZABLE y auto-update
+// ------------------------------------------------------------
+// Problema que resuelve: el yt-dlp empaquetado vive en process.resourcesPath
+// (AppImage / Program Files / paquete del sistema), que es de solo lectura, así
+// que `yt-dlp -U` fallaba en silencio y la app se quedaba con una versión vieja
+// mientras YouTube cambia cada pocas semanas. Ahora se mantiene una copia
+// escribible en <userData>/bin que sí se puede actualizar.
+// ============================================================
+const YTDLP_CHANNEL = 'stable';               // 'stable' | 'nightly'
+const YTDLP_RECHECK_MS = 6 * 60 * 60 * 1000;  // no comprobar updates más de 1 vez cada 6 h
+let _ytdlpUpdatePromise = null;
+let _ytdlpLastCheck = 0;
+let _ytdlpUpdatedAt = 0;
 
-  const searchDirs = [
+function isWinPlatform() {
+  return process.platform === 'win32';
+}
+
+function getManagedBinDir() {
+  return path.join(app.getPath('userData'), 'bin');
+}
+
+function getManagedYtDlpPath() {
+  return path.join(getManagedBinDir(), isWinPlatform() ? 'yt-dlp.exe' : 'yt-dlp');
+}
+
+function _bundledSearchDirs() {
+  return [
     process.resourcesPath,
     __dirname,
     path.join(__dirname, 'bin'),
   ].filter(Boolean);
+}
 
-  for (const dir of searchDirs) {
-    const nativeName = isWin ? 'yt-dlp.exe' : 'yt-dlp';
+function findBundledYtDlp() {
+  const nativeName = isWinPlatform() ? 'yt-dlp.exe' : 'yt-dlp';
+  for (const dir of _bundledSearchDirs()) {
     const nativePath = path.join(dir, nativeName);
-    if (fs.existsSync(nativePath)) {
-      if (!isWin) ensureExecutable(nativePath);
-      return nativePath;
-    }
+    try {
+      if (fs.existsSync(nativePath)) {
+        if (!isWinPlatform()) ensureExecutable(nativePath);
+        return nativePath;
+      }
+    } catch (_) {}
   }
+  return null;
+}
 
-  return isWin ? 'yt-dlp.exe' : 'yt-dlp';
+function findYtDlp() {
+  const managed = getManagedYtDlpPath();
+  try {
+    if (fs.existsSync(managed)) {
+      if (!isWinPlatform()) ensureExecutable(managed);
+      return managed;
+    }
+  } catch (_) {}
+  return findBundledYtDlp() || (isWinPlatform() ? 'yt-dlp.exe' : 'yt-dlp');
 }
 
 function ensureExecutable(binPath) {
@@ -538,44 +577,241 @@ function ensureExecutable(binPath) {
   }
 }
 
-function updateYtDlp() {
-  return new Promise((resolveUpdate) => {
-    const ytdlpBin = findYtDlp();
+// Carpeta con ffmpeg(+ffprobe) si viene junto a la app o en <userData>/bin.
+// Si no hay, yt-dlp lo buscará en el PATH del sistema.
+function findBundledFfmpegDir() {
+  const name = isWinPlatform() ? 'ffmpeg.exe' : 'ffmpeg';
+  const dirs = [..._bundledSearchDirs(), getManagedBinDir()];
+  for (const dir of dirs) {
+    try {
+      const p = path.join(dir, name);
+      if (fs.existsSync(p)) {
+        if (!isWinPlatform()) ensureExecutable(p);
+        return dir;
+      }
+    } catch (_) {}
+  }
+  return null;
+}
 
-    if (!fs.existsSync(ytdlpBin)) {
-      return resolveUpdate({ updated: false, reason: 'not-bundled' });
+let _ffmpegOk = false;
+function hasFfmpeg() {
+  if (_ffmpegOk) return Promise.resolve(true);
+  return new Promise((resolve) => {
+    const dir = findBundledFfmpegDir();
+    const name = isWinPlatform() ? 'ffmpeg.exe' : 'ffmpeg';
+    const bin = dir ? path.join(dir, name) : name;
+    let done = false;
+    const finish = (v) => { if (!done) { done = true; if (v) _ffmpegOk = true; resolve(v); } };
+    try {
+      const p = spawn(bin, ['-version'], { timeout: 8000, windowsHide: true });
+      p.on('close', (code) => finish(code === 0));
+      p.on('error', () => finish(false));
+    } catch (_) { finish(false); }
+  });
+}
+
+function getYtDlpVersion(bin) {
+  return new Promise((resolve) => {
+    let out = '', done = false;
+    const finish = (v) => { if (!done) { done = true; resolve(v); } };
+    try {
+      const p = spawn(bin, ['--version'], { timeout: 15000, windowsHide: true });
+      p.stdout.on('data', d => out += d.toString());
+      p.on('close', (code) => finish(code === 0 && /^\d{4}\.\d{2}\.\d{2}/.test(out.trim()) ? out.trim() : null));
+      p.on('error', () => finish(null));
+    } catch (_) { finish(null); }
+  });
+}
+
+// "2026.03.10.233607" -> "2026.03.10" (comparable como texto)
+function _ytdlpVersionKey(v) {
+  const m = /^(\d{4})\.(\d{2})\.(\d{2})/.exec(v || '');
+  return m ? `${m[1]}.${m[2]}.${m[3]}` : null;
+}
+
+function _ytdlpVersionAgeDays(v) {
+  const m = /^(\d{4})\.(\d{2})\.(\d{2})/.exec(v || '');
+  if (!m) return null;
+  const t = Date.UTC(+m[1], +m[2] - 1, +m[3]);
+  return (Date.now() - t) / 86400000;
+}
+
+function _ytdlpAssetName() {
+  const p = process.platform, a = process.arch;
+  if (p === 'win32') return a === 'ia32' ? 'yt-dlp_x86.exe' : a === 'arm64' ? 'yt-dlp_arm64.exe' : 'yt-dlp.exe';
+  if (p === 'darwin') return 'yt-dlp_macos';
+  if (p === 'linux') return a === 'x64' ? 'yt-dlp_linux' : a === 'arm64' ? 'yt-dlp_linux_aarch64' : null;
+  return null;
+}
+
+function _downloadToFile(url, dest, redirects = 6) {
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (v) => { if (!settled) { settled = true; resolve(v); } };
+    try {
+      const req = https.get(url, { headers: { 'User-Agent': 'NofufAudio' }, timeout: 60000 }, (res) => {
+        if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location && redirects > 0) {
+          res.resume();
+          const next = new URL(res.headers.location, url).toString();
+          return _downloadToFile(next, dest, redirects - 1).then(finish);
+        }
+        if (res.statusCode !== 200) { res.resume(); return finish(false); }
+        const ws = fs.createWriteStream(dest);
+        res.pipe(ws);
+        ws.on('finish', () => ws.close(() => finish(true)));
+        ws.on('error', () => finish(false));
+        res.on('error', () => { try { ws.destroy(); } catch (_) {} finish(false); });
+      });
+      req.on('timeout', () => { req.destroy(); finish(false); });
+      req.on('error', () => finish(false));
+    } catch (_) { finish(false); }
+  });
+}
+
+// Descarga el binario standalone oficial a `dest` (verificándolo antes de colocarlo)
+async function downloadYtDlpBinary(dest) {
+  const asset = _ytdlpAssetName();
+  if (!asset) return false;
+  const repo = YTDLP_CHANNEL === 'nightly' ? 'yt-dlp/yt-dlp-nightly-builds' : 'yt-dlp/yt-dlp';
+  const url = `https://github.com/${repo}/releases/latest/download/${asset}`;
+  const dir = path.dirname(dest);
+  const tmp = path.join(dir, 'tmp-' + path.basename(dest));
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    try { fs.unlinkSync(tmp); } catch (_) {}
+    const ok = await _downloadToFile(url, tmp);
+    if (!ok) { try { fs.unlinkSync(tmp); } catch (_) {} return false; }
+    // Un binario real pesa MBs; menos de 1 MB = página de error / descarga truncada
+    if (fs.statSync(tmp).size < 1024 * 1024) { try { fs.unlinkSync(tmp); } catch (_) {} return false; }
+    if (!isWinPlatform()) fs.chmodSync(tmp, 0o755);
+    const v = await getYtDlpVersion(tmp);
+    if (!v) { try { fs.unlinkSync(tmp); } catch (_) {} return false; }
+    fs.renameSync(tmp, dest);
+    console.log('[yt-dlp] Binario descargado:', v);
+    return true;
+  } catch (e) {
+    console.warn('[yt-dlp] Descarga del binario falló:', e.message);
+    try { fs.unlinkSync(tmp); } catch (_) {}
+    return false;
+  }
+}
+
+function _copyBinary(src, dest) {
+  const dir = path.dirname(dest);
+  const tmp = path.join(dir, 'tmp-' + path.basename(dest));
+  fs.mkdirSync(dir, { recursive: true });
+  try { fs.unlinkSync(tmp); } catch (_) {}
+  fs.copyFileSync(src, tmp);
+  if (!isWinPlatform()) fs.chmodSync(tmp, 0o755);
+  fs.renameSync(tmp, dest);
+}
+
+function _runYtDlpSelfUpdate(bin) {
+  return new Promise((resolve) => {
+    let out = '', err = '', done = false;
+    const finish = (v) => { if (!done) { done = true; resolve(v); } };
+    let proc;
+    try {
+      proc = spawn(bin, ['--update-to', YTDLP_CHANNEL], { timeout: 90000, windowsHide: true });
+    } catch (e) {
+      console.warn('[yt-dlp] No se pudo lanzar la auto-actualización:', e.message);
+      return finish({ updated: false, reason: 'spawn-error' });
     }
-
-    console.log('[yt-dlp] Comprobando actualizaciones…');
-    const proc = spawn(ytdlpBin, ['-U'], { timeout: 25000 });
-    let stdout = '', stderr = '';
-    proc.stdout.on('data', d => stdout += d.toString());
-    proc.stderr.on('data', d => stderr += d.toString());
-
+    proc.stdout.on('data', d => out += d.toString());
+    proc.stderr.on('data', d => err += d.toString());
     proc.on('close', (code) => {
-      const out = stdout.trim();
+      const o = out.trim();
       if (code !== 0) {
-        console.warn('[yt-dlp] Auto-actualización falló:', stderr.slice(0, 200) || out.slice(0, 200));
-        return resolveUpdate({ updated: false, reason: 'error' });
+        console.warn('[yt-dlp] Auto-actualización falló:', err.slice(0, 200) || o.slice(0, 200));
+        return finish({ updated: false, reason: 'error' });
       }
-      if (/up to date|actualizado/i.test(out)) {
+      if (/up to date|actualizado/i.test(o)) {
         console.log('[yt-dlp] Ya estaba actualizado.');
-        return resolveUpdate({ updated: false, reason: 'already-latest' });
+        return finish({ updated: false, reason: 'already-latest' });
       }
-      console.log('[yt-dlp] Actualizado correctamente:', out.slice(0, 200));
-      if (!isWinPlatform()) ensureExecutable(ytdlpBin);
-      return resolveUpdate({ updated: true });
+      console.log('[yt-dlp] Actualizado correctamente:', o.slice(0, 200));
+      if (!isWinPlatform()) ensureExecutable(bin);
+      finish({ updated: true });
     });
-
-    proc.on('error', (err) => {
-      console.warn('[yt-dlp] No se pudo lanzar la auto-actualización:', err.message);
-      resolveUpdate({ updated: false, reason: 'spawn-error' });
+    proc.on('error', (e) => {
+      console.warn('[yt-dlp] No se pudo lanzar la auto-actualización:', e.message);
+      finish({ updated: false, reason: 'spawn-error' });
     });
   });
 }
 
-function isWinPlatform() {
-  return process.platform === 'win32';
+async function updateYtDlp() {
+  const managed = getManagedYtDlpPath();
+  try {
+    const bundled = findBundledYtDlp();
+
+    if (bundled) {
+      // Copia escribible del yt-dlp empaquetado (la ruta original suele ser de solo lectura).
+      // Si la app trae un yt-dlp más nuevo que la copia, se vuelve a copiar.
+      let needCopy = !fs.existsSync(managed);
+      if (!needCopy) {
+        const [vb, vm] = await Promise.all([getYtDlpVersion(bundled), getYtDlpVersion(managed)]);
+        const kb = _ytdlpVersionKey(vb), km = _ytdlpVersionKey(vm);
+        if (!km || (kb && kb > km)) needCopy = true;   // copia rota o más vieja que la empaquetada
+      }
+      if (needCopy) {
+        try { _copyBinary(bundled, managed); }
+        catch (e) { console.warn('[yt-dlp] No se pudo crear la copia actualizable:', e.message); }
+      }
+    } else if (!fs.existsSync(managed)) {
+      // Sin yt-dlp empaquetado: si hay uno del sistema y es reciente, se respeta
+      // (puede tener plugins, p.ej. PO-token); si no existe o es viejo, se descarga el oficial.
+      const sys = await getYtDlpVersion(isWinPlatform() ? 'yt-dlp.exe' : 'yt-dlp');
+      const age = _ytdlpVersionAgeDays(sys);
+      if (sys && age !== null && age <= 30) {
+        return { updated: false, reason: 'system-recent' };
+      }
+      const ok = await downloadYtDlpBinary(managed);
+      if (ok) { _ytdlpUpdatedAt = Date.now(); return { updated: true }; }
+      return { updated: false, reason: 'download-failed' };
+    }
+
+    if (!fs.existsSync(managed)) {
+      // La copia falló: se intenta igualmente sobre el binario empaquetado
+      if (!bundled) return { updated: false, reason: 'not-bundled' };
+      const r = await _runYtDlpSelfUpdate(bundled);
+      if (r.updated) _ytdlpUpdatedAt = Date.now();
+      return r;
+    }
+
+    console.log('[yt-dlp] Comprobando actualizaciones…');
+    let r = await _runYtDlpSelfUpdate(managed);
+    if (r.reason === 'error' || r.reason === 'spawn-error') {
+      // Si la copia gestionada está rota (no arranca), se descarta y se vuelve al empaquetado
+      const v = await getYtDlpVersion(managed);
+      if (!v) {
+        try { fs.unlinkSync(managed); } catch (_) {}
+        if (bundled) {
+          try { _copyBinary(bundled, managed); } catch (_) {}
+        } else {
+          const ok = await downloadYtDlpBinary(managed);
+          if (ok) r = { updated: true };
+        }
+      }
+    }
+    if (r.updated) _ytdlpUpdatedAt = Date.now();
+    return r;
+  } catch (e) {
+    console.warn('[yt-dlp] updateYtDlp error:', e.message);
+    return { updated: false, reason: 'error' };
+  }
+}
+
+// Una sola comprobación en curso a la vez. `force` permite re-comprobar (máx. cada 6 h)
+// cuando una descarga falla por algo que suele arreglar una versión nueva.
+function ensureYtDlpUpToDate(force = false) {
+  const now = Date.now();
+  if (!_ytdlpUpdatePromise || (force && now - _ytdlpLastCheck > YTDLP_RECHECK_MS)) {
+    _ytdlpLastCheck = now;
+    _ytdlpUpdatePromise = updateYtDlp().catch(() => ({ updated: false, reason: 'error' }));
+  }
+  return _ytdlpUpdatePromise;
 }
 
 async function resolveWithYtDlp(videoId) {
@@ -1108,9 +1344,10 @@ ipcMain.handle('download-default-folder', () => {
   try { return app.getPath('music'); } catch { return app.getPath('downloads'); }
 });
 
+const _cancelledDownloads = new Set();
+
 ipcMain.handle('download-youtube', async (_, { id, videoId, ytUrl, title, artist, outDir, format, template }) => {
-  const ytdlpBin = findYtDlp();
-  const cookieArgs = await getCookieArgs();
+  _cancelledDownloads.delete(id);
   const url = ytUrl || `https://www.youtube.com/watch?v=${videoId}`;
   const safeTitle = (title || 'audio').replace(/[<>:"/\\|?*\x00-\x1F]/g, '_').slice(0, 120);
   const safeArtist = (artist || '').replace(/[<>:"/\\|?*\x00-\x1F]/g, '_').slice(0, 80);
@@ -1129,62 +1366,199 @@ ipcMain.handle('download-youtube', async (_, { id, videoId, ytUrl, title, artist
   }
   if (!baseName) baseName = safeArtist ? `${safeArtist} - ${safeTitle}` : safeTitle;
 
+  try { fs.mkdirSync(outDir, { recursive: true }); } catch (_) {}
+  // '%' tiene significado especial en las plantillas de salida de yt-dlp ("100% Pure" rompía la descarga)
+  const outTpl = path.join(outDir, baseName).replace(/%/g, '%%') + '.%(ext)s';
+
   const fmt = (format || 'mp3').toLowerCase();
   const useExtract = ['mp3','m4a','opus','wav','flac','aac'].includes(fmt);
-  const args = [
-    '--no-playlist', '--no-warnings',
-    '-o', path.join(outDir, baseName + '.%(ext)s'),
-    '--newline', '--progress',
-    ...cookieArgs,
-  ];
-  if (useExtract) {
-    args.push('-x', '--audio-format', fmt, '--audio-quality', '0');
-  } else {
-    args.push('-f', 'bestaudio');
-  }
-  args.push(url);
+  const send = (data) => { try { mainWindow?.webContents.send('download-progress', { id, ...data }); } catch {} };
 
-  return new Promise(resolve => {
-    let stderr = '';
-    const proc = spawn(ytdlpBin, args);
-    activeDownloads.set(id, proc);
+  const cookieArgs = await getCookieArgs().catch(() => []);
+  const ffDir = findBundledFfmpegDir();
+  const ffArgs = ffDir ? ['--ffmpeg-location', ffDir] : [];
+  // Sin ffmpeg no se puede convertir a mp3/flac/...: se guarda el audio original (m4a/webm)
+  // en vez de fallar. Se decide aquí y también si yt-dlp se queja de ffmpeg más tarde.
+  let rawMode = useExtract ? !(await hasFfmpeg()) : false;
+  if (rawMode) send({ status: 'processing', percent: 0, message: 'ffmpeg no encontrado: se guardará el audio original' });
+  const rawFmt = fmt === 'opus' ? 'bestaudio[ext=webm]/bestaudio/best' : 'bestaudio[ext=m4a]/bestaudio/best';
 
-    const send = (data) => { try { mainWindow?.webContents.send('download-progress', { id, ...data }); } catch {} };
-    send({ status: 'starting', percent: 0 });
+  const buildArgs = (extra) => {
+    const a = [
+      '--no-playlist', '--no-warnings', '--geo-bypass',
+      '--socket-timeout', '20',
+      '-o', outTpl,
+      '--newline', '--progress',
+      ...ffArgs,
+      ...extra,
+    ];
+    if (useExtract && !rawMode) a.push('-f', 'bestaudio/best', '-x', '--audio-format', fmt, '--audio-quality', '0');
+    else if (useExtract)        a.push('-f', rawFmt);
+    else                        a.push('-f', 'bestaudio/best');
+    a.push(url);
+    return a;
+  };
 
-    const handle = (chunk) => {
-      const txt = chunk.toString();
-      txt.split(/\r?\n/).forEach(line => {
-        const m = line.match(/\[download\]\s+([\d.]+)%/);
-        if (m) {
-          const pct = parseFloat(m[1]);
-          const speedM = line.match(/at\s+([\d.]+\w+\/s)/);
-          const etaM = line.match(/ETA\s+([\d:]+)/);
-          send({ status:'downloading', percent: pct, speed: speedM?.[1], eta: etaM?.[1] });
-        } else if (line.includes('[ExtractAudio]') || line.includes('Destination:')) {
-          send({ status:'processing', percent: 99, message: line.slice(0, 120) });
-        }
-      });
-    };
-    proc.stdout.on('data', handle);
-    proc.stderr.on('data', d => { stderr += d.toString(); handle(d); });
-
-    proc.on('close', code => {
-      activeDownloads.delete(id);
-      if (code === 0) {
-        send({ status:'done', percent: 100, path: outDir });
-        resolve({ ok: true, path: outDir });
-      } else {
-        send({ status:'error', percent: 0, error: stderr.slice(0,200) || `Código ${code}` });
-        resolve({ ok: false, error: stderr.slice(0,200) || `Código ${code}` });
+  const handleOutput = (chunk) => {
+    chunk.toString().split(/\r?\n/).forEach(line => {
+      const m = line.match(/\[download\]\s+([\d.]+)%/);
+      if (m) {
+        const pct = parseFloat(m[1]);
+        const speedM = line.match(/at\s+([\d.]+\w+\/s)/);
+        const etaM = line.match(/ETA\s+([\d:]+)/);
+        send({ status:'downloading', percent: pct, speed: speedM?.[1], eta: etaM?.[1] });
+      } else if (line.includes('[ExtractAudio]') || line.includes('Destination:')) {
+        send({ status:'processing', percent: 99, message: line.slice(0, 120) });
       }
     });
+  };
+
+  const runOnce = (extra) => new Promise((resolve) => {
+    let stderr = '';
+    let proc;
+    try {
+      proc = spawn(findYtDlp(), buildArgs(extra), { windowsHide: true });
+    } catch (e) {
+      return resolve({ code: -1, stderr: e.message, spawnError: e });
+    }
+    activeDownloads.set(id, proc);
+    proc.stdout.on('data', handleOutput);
+    proc.stderr.on('data', d => { stderr += d.toString(); handleOutput(d); });
+    proc.on('close', code => {
+      if (activeDownloads.get(id) === proc) activeDownloads.delete(id);
+      resolve({ code, stderr });
+    });
     proc.on('error', err => {
-      activeDownloads.delete(id);
-      send({ status:'error', percent: 0, error: err.message });
-      resolve({ ok: false, error: err.message });
+      if (activeDownloads.get(id) === proc) activeDownloads.delete(id);
+      resolve({ code: -1, stderr: err.message, spawnError: err });
     });
   });
+
+  // Estrategia de intentos (mismo criterio que resolveWithYtDlp):
+  // 1) SIN cookies y con clientes que siguen funcionando. Con cookies, yt-dlp elige por
+  //    defecto el cliente tv_downgraded, que YouTube rechaza con
+  //    "The page needs to be reloaded" (yt-dlp#17389) -> antes TODAS las descargas de
+  //    usuarios con sesión de navegador fallaban aquí.
+  // 2) Con cookies, forzando clientes que las soportan, solo si hace falta (edad / bot-check).
+  const PC = (c) => ['--extractor-args', `youtube:player_client=${c}`];
+  const buildQueue = () => {
+    const q = [
+      { extra: PC('android,web') },
+      { extra: [] },
+    ];
+    if (cookieArgs.length) {
+      q.push(
+        { extra: [...cookieArgs, ...PC('web_embedded')], cookies: true },
+        { extra: [...cookieArgs, ...PC('web_safari')],   cookies: true },
+        { extra: [...cookieArgs, ...PC('android,web')],  cookies: true },
+        { extra: [...cookieArgs],                        cookies: true },
+      );
+    }
+    q.push({ extra: PC('ios') }, { extra: PC('web_embedded') });
+    return q;
+  };
+
+  const lastErrorLine = (s) => {
+    const lines = String(s || '').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const errs = lines.filter(l => /ERROR/i.test(l));
+    return ((errs[errs.length - 1] || lines[lines.length - 1] || '').replace(/^ERROR:\s*/i, '')).slice(0, 220);
+  };
+
+  const RE_PRIVATE   = /Private video|This video is private|has been removed|account associated with this video has been terminated/i;
+  const RE_DISK      = /No space left|ENOSPC|Permission denied|Errno 13|Errno 28|File name too long|Errno 36/i;
+  const RE_UNAVAIL   = /Video unavailable|This video is (not available|unavailable)/i;
+  const RE_UNAVAIL_X = /Playback on other websites|embedded/i;
+  const RE_AUTH      = /Sign in|not a bot|confirm your age|age-restricted|login required/i;
+  const RE_COOKIEFAIL= /cookie.*database|Could not copy|DPAPI|Failed to decrypt|database is locked|cookies? from browser/i;
+  const RE_FFMPEG    = /(ffmpeg|ffprobe)[^\n]*(not found|not installed|is not available)|Postprocessing:[^\n]*(ffmpeg|ffprobe)/i;
+
+  const runCycle = async () => {
+    let queue = buildQueue();
+    let lastRaw = '';
+    let unavailableHits = 0;
+    while (queue.length) {
+      if (_cancelledDownloads.has(id)) return { ok: false, cancelled: true };
+      const attempt = queue.shift();
+      const r = await runOnce(attempt.extra);
+      if (r.code === 0) return { ok: true };
+      if (_cancelledDownloads.has(id)) return { ok: false, cancelled: true };
+
+      const raw = r.stderr || '';
+      lastRaw = lastErrorLine(raw) || `Código ${r.code}`;
+      console.warn('[download-youtube] intento fallido:', lastRaw);
+
+      if (r.spawnError) {
+        const code = r.spawnError.code;
+        if (code === 'ENOENT') return { ok: false, terminal: true, error: 'yt-dlp no encontrado.' };
+        if (code === 'EACCES' || code === 'ENOEXEC') return { ok: false, terminal: true, error: 'No se pudo ejecutar yt-dlp (permisos).' };
+        continue;
+      }
+
+      // Sin ffmpeg: repetir ESTE intento guardando el audio original en vez de convertir
+      if (useExtract && !rawMode && RE_FFMPEG.test(raw)) {
+        rawMode = true;
+        send({ status: 'processing', percent: 0, message: 'ffmpeg no encontrado: se guardará el audio original' });
+        queue.unshift(attempt);
+        continue;
+      }
+
+      if (RE_PRIVATE.test(raw)) return { ok: false, terminal: true, error: 'Vídeo privado o eliminado.' };
+      if (RE_DISK.test(raw))    return { ok: false, terminal: true, error: 'No se pudo escribir en la carpeta de destino (permisos o disco lleno).' };
+      if (RE_UNAVAIL.test(raw) && !RE_UNAVAIL_X.test(raw)) {
+        // Puede ser específico del cliente: se confirma con un segundo intento antes de rendirse
+        if (++unavailableHits >= 2) return { ok: false, terminal: true, error: 'Vídeo no disponible.' };
+      }
+
+      // Cookies del navegador inutilizables (bloqueadas, cifradas, permisos): descartarlas
+      if (cookieArgs.length && RE_COOKIEFAIL.test(raw) && !/page needs to be reloaded/i.test(raw)) {
+        queue = queue.filter(x => !x.cookies);
+      } else if (cookieArgs.length && RE_AUTH.test(raw)) {
+        // Pide login/edad: no tiene sentido seguir probando sin cookies
+        const withCookies = queue.filter(x => x.cookies);
+        if (withCookies.length) queue = withCookies;
+      }
+
+      if (queue.length) send({ status: 'reintentando…', percent: 0 });
+    }
+    return { ok: false, error: lastRaw };
+  };
+
+  const friendlyError = (e) => {
+    const s = String(e || '');
+    if (/page needs to be reloaded|UNPLAYABLE|n challenge|nsig|SABR|PO Token|HTTP Error 403|Requested format is not available/i.test(s))
+      return 'YouTube rechazó la descarga (yt-dlp desactualizado o bloqueado). Reinicia NofufAudio e inténtalo de nuevo.';
+    if (RE_AUTH.test(s))
+      return 'YouTube pide verificación: inicia sesión en YouTube en tu navegador o añade cookies en Ajustes → YouTube.';
+    return s.slice(0, 160) || 'Error desconocido';
+  };
+
+  const startedAt = Date.now();
+  let result = await runCycle();
+
+  // Si todo falla, lo más habitual es un yt-dlp viejo: actualizar y reintentar una vez
+  if (!result.ok && !result.terminal && !result.cancelled) {
+    send({ status: 'actualizando yt-dlp…', percent: 0 });
+    const upd = await ensureYtDlpUpToDate(true);
+    if (upd && upd.updated && _ytdlpUpdatedAt >= startedAt) {
+      send({ status: 'reintentando…', percent: 0 });
+      result = await runCycle();
+    }
+  }
+
+  _cancelledDownloads.delete(id);
+
+  if (result.ok) {
+    send({ status: 'done', percent: 100, path: outDir });
+    return { ok: true, path: outDir };
+  }
+  if (result.cancelled) {
+    send({ status: 'error', percent: 0, error: 'Cancelada' });
+    return { ok: false, error: 'Cancelada' };
+  }
+  console.error('[download-youtube] falló:', result.error);
+  const msg = friendlyError(result.error);
+  send({ status: 'error', percent: 0, error: msg });
+  return { ok: false, error: msg };
 });
 
 ipcMain.handle('download-local-file', async (_, { id, srcPath, outDir, title, artist }) => {
@@ -1219,6 +1593,7 @@ ipcMain.handle('download-local-file', async (_, { id, srcPath, outDir, title, ar
 });
 
 ipcMain.handle('download-cancel', (_, id) => {
+  _cancelledDownloads.add(id);
   const proc = activeDownloads.get(id);
   if (proc) { try { proc.kill(); } catch {} activeDownloads.delete(id); return true; }
   return false;
@@ -2496,7 +2871,7 @@ app.whenReady().then(async () => {
   createWindow();
   createTray();
 
-  updateYtDlp().catch(() => {});
+  ensureYtDlpUpToDate().catch(() => {});
 
   const { globalShortcut } = require('electron');
   globalShortcut.register('Alt+F12', () => {
